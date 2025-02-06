@@ -1,5 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Box, Text, Textarea, Button, VStack, HStack } from '@chakra-ui/react';
+import { 
+  Box, 
+  Text, 
+  Textarea, 
+  Button, 
+  VStack, 
+  HStack,
+  Flex,
+  Spacer
+} from '@chakra-ui/react';
 import { useRouter } from 'next/router';
 
 const TITLES = [
@@ -7,7 +16,7 @@ const TITLES = [
   "오늘은 무슨 고민이 있었나요?"
 ];
 
-const Home = () => {
+const Home = ({ onStartChat }) => {
   const [titleIndex, setTitleIndex] = useState(0);
   const [input, setInput] = useState('');
   const router = useRouter();
@@ -23,10 +32,7 @@ const Home = () => {
 
   const startChat = () => {
     if (input.trim()) {
-      router.push({
-        pathname: '/chat',
-        query: { initialMessage: input }
-      });
+      onStartChat(input);
     }
   };
 
@@ -38,64 +44,102 @@ const Home = () => {
   };
 
   return (
-    <VStack 
-      minH="100vh" 
-      justify="center" 
-      spacing={8}
-      bg="gray.50"
-      px={4}
-    >
-      {/* 변경되는 제목 */}
-      <Text
-        fontSize={["2xl", "3xl", "4xl"]}
-        fontWeight="bold"
-        textAlign="center"
-        color="gray.700"
-        transition="all 0.3s"
-        px={4}
+    <Box minH="100vh" bg="gray.50">
+      {/* Navigation Bar */}
+      <Flex 
+        as="nav" 
+        bg="white" 
+        p={4} 
+        shadow="sm"
+        position="fixed"
+        top={0}
+        left={0}
+        right={0}
+        zIndex={10}
       >
-        {TITLES[titleIndex]}
-      </Text>
-
-      {/* 메인 입력 영역 */}
-      <Box 
-        w={["90%", "80%", "70%"]}
-        maxW="800px"
-        bg="white"
-        borderRadius="lg"
-        boxShadow="lg"
-        p={6}
-      >
-        <VStack spacing={4}>
-          <Textarea
-            placeholder="당신의 생각을 자유롭게 입력하세요..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            minH="120px"
-            p={4}
-            fontSize="lg"
-            border="2px solid"
-            borderColor="gray.200"
-            _hover={{ borderColor: "gray.300" }}
-            _focus={{ 
-              borderColor: "blue.500",
-              boxShadow: "0 0 0 1px blue.500"
-            }}
-            resize="none"
-          />
+        <Button
+          variant="ghost"
+          onClick={() => router.push('/')}
+        >
+          MAIM
+        </Button>
+        <Spacer />
+        <HStack spacing={4}>
           <Button
-            colorScheme="blue"
-            size="lg"
-            width="200px"
-            isDisabled={!input.trim()}
-            onClick={startChat}
+            variant="ghost"
+            onClick={() => router.push('/history')}
           >
-            대화 시작하기
+            대화 기록
           </Button>
-        </VStack>
-      </Box>
-    </VStack>
+          <Button
+            variant="ghost"
+            onClick={() => router.push('/action-items')}
+          >
+            액션 아이템
+          </Button>
+        </HStack>
+      </Flex>
+
+      {/* Main Content */}
+      <VStack 
+        justify="center" 
+        spacing={8}
+        px={4}
+        pt="70px" // 네비게이션 바 높이만큼 여백 추가
+        minH="100vh"
+      >
+        {/* 변경되는 제목 */}
+        <Text
+          fontSize={["2xl", "3xl", "4xl"]}
+          fontWeight="bold"
+          textAlign="center"
+          color="gray.700"
+          transition="all 0.3s"
+          px={4}
+        >
+          {TITLES[titleIndex]}
+        </Text>
+
+        {/* 메인 입력 영역 */}
+        <Box 
+          w={["90%", "80%", "70%"]}
+          maxW="800px"
+          bg="white"
+          borderRadius="lg"
+          boxShadow="lg"
+          p={6}
+        >
+          <VStack spacing={4}>
+            <Textarea
+              placeholder="당신의 생각을 자유롭게 입력하세요..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              minH="120px"
+              p={4}
+              fontSize="lg"
+              border="2px solid"
+              borderColor="gray.200"
+              _hover={{ borderColor: "gray.300" }}
+              _focus={{ 
+                borderColor: "blue.500",
+                boxShadow: "0 0 0 1px blue.500"
+              }}
+              resize="none"
+            />
+            <Button
+              colorScheme="blue"
+              size="lg"
+              width="200px"
+              isDisabled={!input.trim()}
+              onClick={startChat}
+            >
+              대화 시작하기
+            </Button>
+          </VStack>
+        </Box>
+      </VStack>
+    </Box>
   );
 };
 
