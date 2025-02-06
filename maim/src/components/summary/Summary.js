@@ -15,8 +15,11 @@ import {
 import { CheckCircleIcon } from '@chakra-ui/icons';
 
 const Summary = ({ data, onReturnHome }) => {
+  console.log('Summary component data:', data); // 컴포넌트로 전달된 데이터 확인
+
   // 데이터가 없는 경우 처리
   if (!data) {
+    console.log('No data provided to Summary component');
     return (
       <Box maxW="800px" mx="auto" p={6} textAlign="center">
         <Text>요약 데이터를 불러올 수 없습니다.</Text>
@@ -40,6 +43,8 @@ const Summary = ({ data, onReturnHome }) => {
     insights = [],
     actionItems = []
   } = data;
+
+  console.log('Destructured data:', { summary, emotions, insights, actionItems }); // 구조 분해된 데이터 확인
 
   // 인사이트와 액션 아이템을 하나의 배열로 통합
   const combinedInsights = [...insights, ...actionItems];

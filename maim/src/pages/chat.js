@@ -12,21 +12,47 @@ export default function ChatPage() {
     }
   }, [initialMessage, router.isReady]);
 
-  const handleEndChat = (summaryData) => {
+  const handleEndChat = async (messages) => {
     try {
-      console.log('Attempting to navigate with data:', summaryData);
-      
+      console.log('Chat messages:', messages);
+
+      // 1. 요약 생성
+      const summaryResponse = await fetch('/api/summary', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messages }),
+      });
+
+      if (!summaryResponse.ok) {
+        throw new Error('Failed to get summary');
+      }
+
+      const summaryData = await summaryResponse.json();
+      console.log('Summary API response:', summaryData);
+
+      // 2. 대화 저장
+      const saveResponse = await fetch('/api/conversations/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages,
+          ...summaryData
+        }),
+      });
+
+      if (!saveResponse.ok) {
+        throw new Error('Failed to save conversation');
+      }
+
+      // 3. 요약 페이지로 이동
       const encodedData = JSON.stringify(summaryData);
-      console.log('Encoded data:', encodedData);
-      
-      // 이미 분석된 데이터를 받아서 바로 요약 페이지로 이동
       router.push({
         pathname: '/summary',
         query: { data: encodedData },
-      }).then(() => {
-        console.log('Navigation successful');
-      }).catch((error) => {
-        console.error('Navigation failed:', error);
       });
     } catch (error) {
       console.error('Error in handleEndChat:', error);

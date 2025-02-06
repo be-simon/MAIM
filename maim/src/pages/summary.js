@@ -7,9 +7,13 @@ export default function SummaryPage() {
   const [summaryData, setSummaryData] = useState(null);
 
   useEffect(() => {
+    console.log('Router query:', router.query); // 라우터 쿼리 확인
+    
     if (router.query.data) {
       try {
-        setSummaryData(JSON.parse(router.query.data));
+        const parsedData = JSON.parse(router.query.data);
+        console.log('Parsed summary data:', parsedData); // 파싱된 데이터 확인
+        setSummaryData(parsedData);
       } catch (error) {
         console.error('Error parsing summary data:', error);
         router.push('/');

@@ -1,28 +1,4 @@
-import { NextResponse } from 'next/server';
-
-// 임시 데이터 - 실제로는 데이터베이스에서 가져와야 함
-const mockConversations = Array.from({ length: 50 }, (_, i) => ({
-  id: i + 1,
-  messages: [
-    { type: 'user', content: `사용자: 안녕하세요 ${i + 1}번째 대화입니다.` },
-    { type: 'assistant', content: `AI: 네, 안녕하세요! ${i + 1}번째 대화를 시작하겠습니다.` }
-  ],
-  summary: `대화 내용 요약 ${i + 1}`,
-  createdAt: new Date(2024, 0, i + 1).toISOString(),
-  emotions: [
-    { label: '기쁨', score: Math.random() },
-    { label: '슬픔', score: Math.random() },
-    { label: '불안', score: Math.random() }
-  ],
-  insights: [
-    `인사이트 ${i + 1}`,
-    `인사이트 ${i + 2}`
-  ],
-  actionItems: [
-    `액션 아이템 ${i + 1}`,
-    `액션 아이템 ${i + 2}`
-  ]
-}));
+import { getConversations } from '@/lib/store/conversationStore';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -32,10 +8,12 @@ export default async function handler(req, res) {
   try {
     const { startDate, endDate, page = 1, limit = 10, sort = 'desc' } = req.query;
     
+    // 저장된 대화 목록 가져오기
+    let filteredConversations = getConversations();
+
     // 날짜 필터링
-    let filteredConversations = mockConversations;
     if (startDate && endDate) {
-      filteredConversations = mockConversations.filter(conv => {
+      filteredConversations = filteredConversations.filter(conv => {
         const convDate = new Date(conv.createdAt);
         return convDate >= new Date(startDate) && convDate <= new Date(endDate);
       });

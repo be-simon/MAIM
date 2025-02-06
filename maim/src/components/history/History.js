@@ -91,20 +91,26 @@ const History = () => {
     }
   };
 
-  const handleConversationClick = (conv) => {
+  const handleConversationClick = async (conv) => {
     try {
-      const encodedData = JSON.stringify({
+      console.log('Conversation data:', conv);
+
+      // 이미 저장된 요약 데이터가 있으면 그대로 사용
+      const summaryData = {
         summary: conv.summary,
         emotions: conv.emotions,
         insights: conv.insights,
         actionItems: conv.actionItems
-      });
+      };
 
+      const encodedData = JSON.stringify(summaryData);
+      
       router.push({
         pathname: '/summary',
         query: { data: encodedData }
       });
     } catch (error) {
+      console.error('Error in handleConversationClick:', error);
       toast({
         title: '요약 페이지로 이동하는데 실패했습니다.',
         status: 'error',
