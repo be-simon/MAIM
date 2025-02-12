@@ -1,4 +1,4 @@
-import { getConversations } from '@/lib/store/conversationStore';
+import { getConversations } from '@/lib/langchain/conversationStore';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {

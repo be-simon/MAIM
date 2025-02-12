@@ -10,6 +10,7 @@ import {
   Spacer
 } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
+import { ModelSelector } from "@/components/model-selector/ModelSelector";
 
 const TITLES = [
   "오늘은 무슨 일이 있었나요?",
@@ -57,12 +58,15 @@ const Home = ({ onStartChat }) => {
         right={0}
         zIndex={10}
       >
-        <Button
-          variant="ghost"
-          onClick={() => router.push('/')}
-        >
-          MAIM
-        </Button>
+        <HStack spacing={4}>
+          <Button
+            variant="ghost"
+            onClick={() => router.push('/')}
+          >
+            MAIM
+          </Button>
+          <ModelSelector />
+        </HStack>
         <Spacer />
         <HStack spacing={4}>
           <Button

@@ -1,4 +1,6 @@
-import { OpenAIService } from '@/lib/services/openaiService';
+import { createConversationChain } from '@/lib/langchain/chains';
+import { createMemoryStore } from '@/lib/langchain/memoryStore';
+import { messagePreprocessor } from '@/lib/langchain/preprocessor';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -6,7 +8,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { messages } = req.body;
+    const { messages, sessionId = `summary_${Date.now()}` } = req.body;
     
     // 요청 데이터 검증
     if (!messages || !Array.isArray(messages)) {
@@ -19,44 +21,45 @@ export default async function handler(req, res) {
       });
     }
 
-    // 대화 내용 변환
-    const conversationText = messages
-      .filter(msg => msg && msg.content)
-      .map(msg => `${msg.type || 'unknown'}: ${msg.content}`)
-      .join('\n');
+    // 메모리 스토어 및 체인 핸들러 초기화
+    const memoryStore = await createMemoryStore(sessionId);
+    const chainHandler = await createConversationChain(sessionId, memoryStore);
 
-    // GPT 요청
-    const response = await OpenAIService.createSummaryAnalysis(conversationText);
-    
-    try {
-      const analysisResult = JSON.parse(response);
-      
-      // 응답 데이터 검증
-      if (!analysisResult.summary || !analysisResult.emotions || !analysisResult.insights || !analysisResult.actionItems) {
-        throw new Error('Missing required fields in analysis result');
+    // 메시지들을 메모리에 저장
+    for (const message of messages) {
+      if (message && message.content) {
+        await memoryStore.addMessage({
+          type: message.type || 'human',
+          content: message.content,
+          additional_kwargs: {}
+        });
       }
-
-      return res.status(200).json({
-        summary: analysisResult.summary,
-        emotions: analysisResult.emotions.map(e => ({
-          label: e.name,
-          score: e.score
-        })),
-        insights: analysisResult.insights,
-        actionItems: analysisResult.actionItems
-      });
-
-    } catch (parseError) {
-      console.error('Failed to parse GPT response:', parseError);
-      console.error('Raw response:', response);
-      
-      return res.status(500).json({
-        summary: "응답 분석 중 오류가 발생했습니다.",
-        emotions: [{ label: "분석 실패", score: 1.0 }],
-        insights: ["GPT 응답을 처리할 수 없습니다."],
-        actionItems: ["시스템 점검이 필요합니다."]
-      });
     }
+
+    // 요약 생성
+    const summary = await chainHandler.generateSummary(sessionId);
+
+    // 메모리 정리
+    await memoryStore.clearMemory();
+
+    // 응답 데이터 검증 및 변환
+    const processedSummary = {
+      summary: summary.summary || "요약을 생성할 수 없습니다.",
+      emotions: Array.isArray(summary.emotions) 
+        ? summary.emotions.map(e => ({
+            label: e.name || "알 수 없음",
+            score: typeof e.score === 'number' ? e.score : 1.0
+          }))
+        : [{ label: "분석 실패", score: 1.0 }],
+      insights: Array.isArray(summary.insights) 
+        ? summary.insights 
+        : ["통찰을 생성할 수 없습니다."],
+      actionItems: Array.isArray(summary.actionItems) 
+        ? summary.actionItems 
+        : ["실천 제안을 생성할 수 없습니다."]
+    };
+
+    return res.status(200).json(processedSummary);
 
   } catch (error) {
     console.error('API Error:', error);

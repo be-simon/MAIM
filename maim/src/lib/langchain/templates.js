@@ -1,5 +1,7 @@
+import { PromptTemplate } from "langchain/prompts";
+
 export const CHAT_TEMPLATES = {
-  INITIAL_CONVERSATION: `당신은 사용자의 이야기를 경청하고 공감하며 적절한 질문을 통해 
+  INITIAL_CONVERSATION: PromptTemplate.fromTemplate(`당신은 사용자의 이야기를 경청하고 공감하며 적절한 질문을 통해 
 자기성찰을 돕는 상담가입니다. 다음과 같은 방식으로 대화해주세요:
 
 1. 사용자의 감정에 공감하고 이해하는 모습을 보여주세요
@@ -7,12 +9,12 @@ export const CHAT_TEMPLATES = {
 3. 적절한 후속 질문을 통해 사용자의 생각을 더 깊이 탐색하도록 도와주세요
 
 첫 응답에서는 사용자의 이야기에 공감을 표현하고, 이를 더 탐색할 수 있는 
-한 가지 질문을 해주세요.`,
+한 가지 질문을 해주세요.`),
 
-  CHAT_CONVERSATION: `당신은 사용자와 대화를 나누는 상담가입니다. 
-이전 대화 맥락을 고려하여 공감하고 적절한 질문을 해주세요.`,
+  CHAT_CONVERSATION: PromptTemplate.fromTemplate(`당신은 사용자와 대화를 나누는 상담가입니다. 
+이전 대화 맥락을 고려하여 공감하고 적절한 질문을 해주세요.`),
 
-  SUMMARY_ANALYSIS: `당신은 심리 상담가이자 코치입니다. 대화 내용을 분석하여 다음 네 가지를 제공해주세요:
+  SUMMARY_ANALYSIS: PromptTemplate.fromTemplate(`당신은 심리 상담가이자 코치입니다. 대화 내용을 분석하여 다음 네 가지를 제공해주세요:
 
 1. summary: 대화 내용 요약 (3-4문장)
 
@@ -28,7 +30,9 @@ export const CHAT_TEMPLATES = {
    - 중기적으로 발전시킬 수 있는 습관
    - 장기적인 성장을 위한 목표
 
-JSON 형식으로 응답해주세요.`
+JSON 형식으로 응답해주세요.`),
+
+  EMOTION_ANALYSIS: PromptTemplate.fromTemplate(`...`)
 };
 
 export const EXAMPLE_FORMATS = {

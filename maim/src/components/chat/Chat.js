@@ -6,8 +6,11 @@ import ChatInput from './ChatInput';
 const Chat = ({ initialMessage, onEndChat }) => {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [input, setInput] = useState('');
 
   const sendMessage = async (content) => {
+    if (!content.trim()) return;
+    
     setIsLoading(true);
     try {
       const response = await fetch('/api/chat', {
@@ -30,6 +33,9 @@ const Chat = ({ initialMessage, onEndChat }) => {
         { type: 'user', content: content.trim() },
         { type: 'ai', content: aiResponse }
       ]);
+      
+      // 메시지 전송 후 입력창 초기화
+      setInput('');
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -74,8 +80,8 @@ const Chat = ({ initialMessage, onEndChat }) => {
           <MessageList messages={messages} />
         </Box>
         <ChatInput
-          input=""
-          setInput={() => {}}
+          input={input}
+          setInput={setInput}
           onSend={sendMessage}
           onRandomQuestion={handleRandomQuestion}
           onEndChat={() => onEndChat(messages)}
