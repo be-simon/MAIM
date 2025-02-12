@@ -7,6 +7,7 @@ const Chat = ({ initialMessage, onEndChat }) => {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [input, setInput] = useState('');
+  const [sessionId, setSessionId] = useState(null);
 
   const sendMessage = async (content) => {
     if (!content.trim()) return;
@@ -20,18 +21,29 @@ const Chat = ({ initialMessage, onEndChat }) => {
         },
         body: JSON.stringify({ 
           message: content,
-          isInitial: messages.length === 0 
+          sessionId  // 현재 세션 ID 전달
         }),
       });
 
       const data = await response.json();
+      
+      // 응답에서 받은 sessionId 저장
+      if (data.sessionId) {
+        setSessionId(data.sessionId);
+      }
       
       // 응답 데이터 검증 및 정제
       const aiResponse = data?.response?.trim() || '죄송합니다. 응답을 생성할 수 없습니다.';
       
       setMessages(prev => [...prev, 
         { type: 'user', content: content.trim() },
-        { type: 'ai', content: aiResponse }
+        { 
+          type: 'ai', 
+          content: aiResponse,
+          additional_kwargs: {
+            action_items: data.action_items || []
+          }
+        }
       ]);
       
       // 메시지 전송 후 입력창 초기화

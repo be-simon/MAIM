@@ -1,10 +1,8 @@
 import { ConversationChain } from "langchain/chains";
 import { ChatOpenAI } from "@langchain/openai";
-import { messagePreprocessor } from "./preprocessor";
-import { PromptTemplate } from "@langchain/core/prompts";
 import { BufferMemory } from "langchain/memory";
 import { GPT_MODELS, DEFAULT_MODEL } from "@/lib/constants/models";
-import { AIMessage, HumanMessage } from "@langchain/core/messages";
+import { CHAT_TEMPLATES, RESPONSE_FORMATS } from './templates';
 
 // GPT 모델 생성 함수
 function createModel(modelType = DEFAULT_MODEL) {
@@ -15,10 +13,8 @@ function createModel(modelType = DEFAULT_MODEL) {
   });
 }
 
-// 기본 모델 인스턴스
 let model = createModel();
 
-// 모델 업데이트 함수
 export function updateModel(modelType) {
   model = createModel(modelType);
   return model;
@@ -28,195 +24,193 @@ export class ConversationChainHandler {
   constructor(memoryStore) {
     this.memoryStore = memoryStore;
     this.model = model;
+    this.isFirstMessage = true;
+    this.chain = null;
+    
+    // 메시지 히스토리 기반으로 초기화
+    this.initializeState();
   }
 
-  async initializeChain() {
+  async initializeState() {
+    const messages = await this.memoryStore.getMessages();
+    console.log('Current messages in store:', messages);
+    this.isFirstMessage = messages.length === 0;
+    console.log('isFirstMessage initialized as:', this.isFirstMessage);
+  }
+
+  // 체인 초기화
+  async initializeChain(promptTemplate) {
+    const memory = new BufferMemory({
+      returnMessages: true,
+      memoryKey: "history",
+      inputKey: "input",
+      outputKey: "response",
+    });
+
+    return new ConversationChain({
+      prompt: promptTemplate,
+      llm: this.model,
+      memory: memory,
+      verbose: process.env.NODE_ENV === 'development',
+    });
+  }
+
+  // JSON 응답 검증
+  validateResponse(response, type) {
     try {
-      // 새로운 메모리 인스턴스 생성
-      const memory = new BufferMemory({
-        returnMessages: true,
-        memoryKey: "history",
-        inputKey: "input",
-        outputKey: "response",
-      });
+      console.log('Raw response before validation:', response);
+      const format = RESPONSE_FORMATS[type];
+      const cleanedResponse = this.cleanResponse(response);
+      console.log('Cleaned response:', cleanedResponse);
+      const parsed = typeof cleanedResponse === 'string' ? JSON.parse(cleanedResponse) : cleanedResponse;
+      console.log('Parsed response:', parsed);
 
-      // 프롬프트 템플릿 정의
-      const prompt = PromptTemplate.fromTemplate(
-        `The following is a friendly conversation between a human and an AI. The AI is helpful, creative, clever, and very friendly.
+      // 필수 필드 검사
+      for (const key of Object.keys(format)) {
+        if (!(key in parsed)) {
+          throw new Error(`Missing required field: ${key}`);
+        }
+      }
 
-Current conversation:
-{history}
-Human: {input}
-Assistant:`
-      );
-
-      // 체인 생성
-      const chain = new ConversationChain({
-        memory: memory,
-        prompt: prompt,
-        llm: this.model,
-        verbose: process.env.NODE_ENV === 'development',
-      });
-
-      return chain;
+      return parsed;
     } catch (error) {
-      console.error('Error initializing conversation chain:', error);
+      console.error('Response validation error:', error);
       throw error;
     }
   }
 
+  cleanResponse(response) {
+    // Remove any markdown code block indicators
+    response = response.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    
+    // Remove any leading/trailing whitespace
+    response = response.trim();
+    
+    // Ensure the response starts with { and ends with }
+    if (!response.startsWith('{') || !response.endsWith('}')) {
+      throw new Error('Invalid JSON format');
+    }
+    
+    return response;
+  }
+
   async processMessage(message) {
     try {
-      if (!message || typeof message.content !== 'string') {
+      console.log('Processing message with state:', {
+        isFirstMessage: this.isFirstMessage,
+        messageCount: await this.memoryStore.getMessages().length
+      });
+      if (!message?.content) {
         throw new Error('Invalid message format: content must be a string');
       }
 
-      const validMessage = {
+      // 메시지 저장
+      await this.memoryStore.addMessage({
         type: 'human',
         content: message.content,
         additional_kwargs: {},
-      };
+      });
 
-      // 메시지 저장
-      await this.memoryStore.addMessage(validMessage);
+      // 대화 기록 가져오기
+      const history = await this.memoryStore.getMessages();
+      
+      // 현재 상태에 맞는 프롬프트 템플릿 선택
+      const promptTemplate = this.isFirstMessage ? 
+        CHAT_TEMPLATES.INITIAL_CONVERSATION :
+        CHAT_TEMPLATES.ONGOING_CONVERSATION;
 
-      // 체인 초기화 및 호출
-      const chain = await this.initializeChain();
-      const response = await chain.call({
+      console.log('isFirstMessage:', this.isFirstMessage);
+      // 프롬프트 메시지 포맷팅
+      const messages = await promptTemplate.formatMessages({
+        history: history.map(msg => 
+          `${msg.type === 'human' ? 'User' : 'Assistant'}: ${msg.content}`
+        ).join('\n'),
         input: message.content
       });
+
+      // LLM 호출
+      const result = await this.model.invoke(messages);
+
+      // JSON 응답 파싱 및 검증
+      const validatedResponse = this.validateResponse(
+        result.content,
+        this.isFirstMessage ? 'INITIAL' : 'ONGOING'
+      );
 
       // AI 응답 저장
       const aiMessage = {
         type: 'ai',
-        content: response.response,
-        additional_kwargs: {},
+        content: validatedResponse.response,
+        additional_kwargs: {
+          action_items: validatedResponse.action_items || []
+        },
       };
-      
       await this.memoryStore.addMessage(aiMessage);
 
-      return {
-        response: response.response,
-        context: { systemMessage: { content: '' } }  // 컨텍스트 단순화
-      };
+      // 첫 메시지 플래그 업데이트
+      if (this.isFirstMessage) {
+        this.isFirstMessage = false;
+      }
+      console.log('isFirstMessage:', this.isFirstMessage);
+      return validatedResponse;
+
     } catch (error) {
       console.error('Failed to process message:', error);
       throw error;
     }
   }
 
-  // 대화 요약 생성
   async generateSummary(sessionId) {
     try {
       const messages = await this.memoryStore.getMessages();
-      console.log('Raw messages:', messages);
-
+      
+      // 대화 내용을 텍스트로 변환
       const conversationText = messages
-        .map(msg => {
-          // 메시지 객체의 실제 구조를 로그로 확인
-          console.log('Processing message:', JSON.stringify(msg, null, 2));
-
-          // 메시지 타입과 내용 추출
-          let role = 'Unknown';
-          let content = '';
-
-          // 1. 직접 content 접근
-          if (msg.content) {
-            content = msg.content;
-            role = msg.type === 'human' ? 'User' : 'Assistant';
-          }
-          // 2. data 객체를 통한 접근
-          else if (msg.data?.content) {
-            content = msg.data.content;
-            role = msg.data.type === 'human' ? 'User' : 'Assistant';
-          }
-          // 3. _getType 메서드를 통한 접근
-          else if (msg._getType) {
-            content = msg.text || msg.value || '';
-            role = msg._getType() === 'human' ? 'User' : 'Assistant';
-          }
-
-          if (!content) {
-            console.warn('Could not extract content from message:', msg);
-            return '';
-          }
-
-          return `${role}: ${content}`;
-        })
-        .filter(text => text.trim() !== '')
+        .map(msg => `${msg.type === 'human' ? 'User' : 'Assistant'}: ${msg.content}`)
         .join('\n');
 
-      console.log('Final conversation text:', conversationText);
+      // 요약 프롬프트 포맷팅
+      const summaryPrompt = await CHAT_TEMPLATES.SUMMARY_ANALYSIS.format({
+        text: conversationText
+      });
 
-      // 2. LLM 호출을 위한 프롬프트 개선
-      const systemPrompt = `아래 대화 내용을 분석하여 다음 형식의 JSON으로 요약해주세요:
+      // LLM 호출
+      const response = await this.model.invoke(summaryPrompt);
 
-대화 내용:
-${conversationText}
+      // JSON 파싱 및 검증
+      const validatedSummary = this.validateResponse(response.content, 'SUMMARY');
 
-응답 형식:
-{
-  "summary": "대화의 핵심 내용을 2-3문장으로 요약",
-  "emotions": [
-    {
-      "name": "주요 감정 (예: 불안, 걱정, 희망 등)",
-      "score": 0.8  // 감정 강도 (0.0 ~ 1.0)
-    }
-  ],
-  "insights": [
-    "대화에서 발견된 주요 통찰 (1-2개)"
-  ],
-  "actionItems": [
-    "추천할 수 있는 실천 사항 (1-2개)"
-  ]
-}
-
-반드시 위 JSON 형식을 지켜주세요.`;
-
-      // 3. LLM 호출
-      const response = await this.model.invoke([
-        { role: 'system', content: systemPrompt }
-      ]);
-
-      // 4. JSON 파싱 및 검증
-      try {
-        const jsonMatch = response.content.match(/\{[\s\S]*\}/);
-        const jsonStr = jsonMatch ? jsonMatch[0] : response.content;
-        const result = JSON.parse(jsonStr);
-
-        // 필수 필드 검증
-        if (!result.summary || !Array.isArray(result.emotions) || 
-            !Array.isArray(result.insights) || !Array.isArray(result.actionItems)) {
-          throw new Error('Invalid response format');
-        }
-
-        return result;
-      } catch (parseError) {
-        console.error('Error parsing LLM response:', parseError);
-        console.log('Raw LLM response:', response.content);
-        
-        return {
-          summary: "대화 내용을 요약하는 데 실패했습니다.",
-          emotions: [{ name: "분석 실패", score: 1.0 }],
-          insights: ["요약을 생성할 수 없습니다."],
-          actionItems: ["다시 시도해주세요."]
-        };
-      }
+      // 단순히 검증된 응답 반환
+      return validatedSummary;
     } catch (error) {
       console.error('Error in generateSummary:', error);
       throw error;
     }
   }
 
-  // 대화 종료 처리
+  // 요약 형식 검증
+  validateSummaryFormat(summary) {
+    return summary.summary && 
+           Array.isArray(summary.emotions) &&
+           summary.emotions.every(e => typeof e === 'string') &&
+           Array.isArray(summary.insights) &&
+           Array.isArray(summary.actionItems);
+  }
+
+  // 기본 요약 응답
+  getDefaultSummary() {
+    return {
+      summary: "대화 내용을 요약하는 데 실패했습니다.",
+      emotions: ["분석 실패"],
+      insights: ["요약을 생성할 수 없습니다."],
+      actionItems: ["다시 시도해주세요."]
+    };
+  }
+
   async endConversation(sessionId) {
     try {
-      // 1. 대화 요약 생성
       const summary = await this.generateSummary(sessionId);
-
-      // 2. 메모리 정리
       await this.memoryStore.clearMemory();
-
       return summary;
     } catch (error) {
       console.error('Error ending conversation:', error);
@@ -225,12 +219,16 @@ ${conversationText}
   }
 }
 
-// 체인 핸들러 생성 헬퍼 함수
+// 세션별 인스턴스 관리
+const chainInstances = new Map();
+
 export async function createConversationChain(sessionId, memoryStore) {
-  return new ConversationChainHandler(memoryStore);
+  if (!chainInstances.has(sessionId)) {
+    chainInstances.set(sessionId, new ConversationChainHandler(memoryStore));
+  }
+  return chainInstances.get(sessionId);
 }
 
-// 모델 인스턴스에 대한 접근을 위한 유틸리티 함수
 export function getModel() {
   return model;
 }

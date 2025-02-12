@@ -38,6 +38,7 @@ export default async function handler(req, res) {
 
     // 요약 생성
     const summary = await chainHandler.generateSummary(sessionId);
+    console.log('Generated summary:', summary);
 
     // 메모리 정리
     await memoryStore.clearMemory();
@@ -46,11 +47,8 @@ export default async function handler(req, res) {
     const processedSummary = {
       summary: summary.summary || "요약을 생성할 수 없습니다.",
       emotions: Array.isArray(summary.emotions) 
-        ? summary.emotions.map(e => ({
-            label: e.name || "알 수 없음",
-            score: typeof e.score === 'number' ? e.score : 1.0
-          }))
-        : [{ label: "분석 실패", score: 1.0 }],
+        ? summary.emotions.map(e => e || "알 수 없음")
+        : ["분석 실패"],
       insights: Array.isArray(summary.insights) 
         ? summary.insights 
         : ["통찰을 생성할 수 없습니다."],

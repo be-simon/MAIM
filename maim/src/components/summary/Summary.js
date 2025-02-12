@@ -15,7 +15,8 @@ import {
 import { CheckCircleIcon } from '@chakra-ui/icons';
 
 const Summary = ({ data, onReturnHome }) => {
-  console.log('Summary component data:', data); // 컴포넌트로 전달된 데이터 확인
+  // 원본 데이터 로깅
+  console.log('Raw Summary data:', JSON.stringify(data, null, 2));
 
   // 데이터가 없는 경우 처리
   if (!data) {
@@ -30,13 +31,26 @@ const Summary = ({ data, onReturnHome }) => {
     );
   }
 
-  const getEmotionColor = (score) => {
-    if (score >= 0.7) return "green";
-    if (score >= 0.4) return "blue";
-    return "red";
+  // getEmotionColor 함수 수정 - 감정 종류에 따른 색상 지정
+  const getEmotionColor = (emotion) => {
+    const emotionColors = {
+      '스트레스': 'red',
+      '불안': 'orange',
+      '걱정': 'yellow',
+      '피로': 'purple',
+      '희망': 'green',
+      '기쁨': 'green',
+      '성취감': 'blue',
+      '만족': 'teal',
+      '분노': 'red',
+      '슬픔': 'blue',
+      '우울': 'gray'
+    };
+    
+    // 기본 색상 반환
+    return emotionColors[emotion] || 'gray';
   };
 
-  // 기본값 설정
   const {
     summary = "대화 내용을 요약할 수 없습니다.",
     emotions = [],
@@ -44,7 +58,13 @@ const Summary = ({ data, onReturnHome }) => {
     actionItems = []
   } = data;
 
-  console.log('Destructured data:', { summary, emotions, insights, actionItems }); // 구조 분해된 데이터 확인
+  // 구조 분해된 데이터 상세 로깅
+  console.log('Emotions data type:', typeof emotions);
+  console.log('Emotions array contents:', emotions.map(e => ({
+    type: typeof e,
+    value: e,
+    keys: typeof e === 'object' ? Object.keys(e) : null
+  })));
 
   // 인사이트와 액션 아이템을 하나의 배열로 통합
   const combinedInsights = [...insights, ...actionItems];
@@ -72,10 +92,10 @@ const Summary = ({ data, onReturnHome }) => {
               <WrapItem key={index}>
                 <Tag 
                   size="lg" 
-                  colorScheme={getEmotionColor(emotion.score)}
+                  colorScheme={getEmotionColor(emotion)}
                   variant="solid"
                 >
-                  {emotion.label} ({Math.round(emotion.score * 100)}%)
+                  {emotion}
                 </Tag>
               </WrapItem>
             ))}

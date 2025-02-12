@@ -151,18 +151,25 @@ export class MemoryStore {
           })
         : new AIMessage({
             content: message.content || '',
-            additional_kwargs: message.additional_kwargs || {}
+            additional_kwargs: {
+              // AI 메시지의 경우 follow_up_questions와 action_items 포함
+              action_items: message.additional_kwargs?.action_items || []
+            }
           });
       
-      // 직접 Redis에 저장
-      const key = `messages:${this.messageHistory.sessionId}`;
-      await this.messageHistory.client.lPush(key, JSON.stringify({
+      // Redis에 저장할 데이터 구조화
+      const messageData = {
         type: langChainMessage._getType(),
         data: {
           content: langChainMessage.content,
-          additional_kwargs: langChainMessage.additional_kwargs || {}
+          additional_kwargs: langChainMessage.additional_kwargs || {},
+          timestamp: new Date().toISOString()
         }
-      }));
+      };
+
+      // Redis에 저장
+      const key = `messages:${this.messageHistory.sessionId}`;
+      await this.messageHistory.client.lPush(key, JSON.stringify(messageData));
 
       return langChainMessage;
     } catch (error) {
@@ -175,6 +182,7 @@ export class MemoryStore {
     try {
       const key = `messages:${this.messageHistory.sessionId}`;
       const messages = await this.messageHistory.client.lRange(key, 0, -1);
+      console.log('Retrieved messages from Redis:', messages);  // 로그 추가
       
       return messages.map(msg => {
         try {
@@ -183,20 +191,29 @@ export class MemoryStore {
           
           // 메시지 데이터 추출
           const type = parsed.type || parsed.data?.type || 'unknown';
-          const content = parsed.content || parsed.data?.content || '';
-          
-          // 새로운 메시지 객체 생성
+          const content = parsed.data?.content || parsed.content || '';
+          const additional_kwargs = parsed.data?.additional_kwargs || {};
+
+          // 메시지 객체 생성
           return {
             type,
             content,
-            additional_kwargs: parsed.additional_kwargs || {}
+            additional_kwargs: {
+              follow_up_questions: additional_kwargs.follow_up_questions || [],
+              action_items: additional_kwargs.action_items || [],
+              timestamp: additional_kwargs.timestamp
+            }
           };
         } catch (error) {
           console.error('Error processing message:', error);
           return {
             type: 'unknown',
             content: String(msg),
-            additional_kwargs: {}
+            additional_kwargs: {
+              follow_up_questions: [],
+              action_items: [],
+              timestamp: new Date().toISOString()
+            }
           };
         }
       });
@@ -229,8 +246,14 @@ export class MemoryStore {
   async saveConversation(conversation) {
     try {
       const key = `conversation:${conversation.id}`;
-      await this.messageHistory.client.set(key, JSON.stringify(conversation));
-      return conversation;
+      const conversationData = {
+        ...conversation,
+        messages: await this.getMessages(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      await this.messageHistory.client.set(key, JSON.stringify(conversationData));
+      return conversationData;
     } catch (error) {
       console.error('Failed to save conversation:', error);
       throw error;
