@@ -1,16 +1,20 @@
 import { useRouter } from 'next/router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Chat from '@/components/chat/Chat';
 
 export default function ChatPage() {
   const router = useRouter();
-  const { initialMessage } = router.query;
+  const [message, setMessage] = useState(null);
 
   useEffect(() => {
-    if (!initialMessage && router.isReady) {
-      router.replace('/');
+    if (router.isReady) {
+      if (!router.query.initialMessage) {
+        router.replace('/');
+      } else {
+        setMessage(router.query.initialMessage);
+      }
     }
-  }, [initialMessage, router.isReady]);
+  }, [router.isReady]);
 
   const handleEndChat = async (messages) => {
     try {
@@ -60,7 +64,7 @@ export default function ChatPage() {
     }
   };
 
-  if (!initialMessage) return null;
+  if (!message) return null;
 
-  return <Chat initialMessage={initialMessage} onEndChat={handleEndChat} />;
+  return <Chat initialMessage={message} onEndChat={handleEndChat} />;
 } 

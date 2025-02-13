@@ -4,12 +4,8 @@ import {
   Text, 
   Textarea, 
   Button, 
-  VStack, 
-  HStack,
-  Flex,
-  Spacer
+  VStack,
 } from '@chakra-ui/react';
-import { useRouter } from 'next/router';
 import { ModelSelector } from "@/components/model-selector/ModelSelector";
 
 const TITLES = [
@@ -20,7 +16,6 @@ const TITLES = [
 const Home = ({ onStartChat }) => {
   const [titleIndex, setTitleIndex] = useState(0);
   const [input, setInput] = useState('');
-  const router = useRouter();
 
   // 2초마다 제목 변경
   useEffect(() => {
@@ -46,50 +41,11 @@ const Home = ({ onStartChat }) => {
 
   return (
     <Box minH="100vh" bg="gray.50">
-      {/* Navigation Bar */}
-      <Flex 
-        as="nav" 
-        bg="white" 
-        p={4} 
-        shadow="sm"
-        position="fixed"
-        top={0}
-        left={0}
-        right={0}
-        zIndex={10}
-      >
-        <HStack spacing={4}>
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/')}
-          >
-            MAIM
-          </Button>
-          <ModelSelector />
-        </HStack>
-        <Spacer />
-        <HStack spacing={4}>
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/history')}
-          >
-            대화 기록
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/action-items')}
-          >
-            액션 아이템
-          </Button>
-        </HStack>
-      </Flex>
-
       {/* Main Content */}
       <VStack 
         justify="center" 
         spacing={8}
         px={4}
-        pt="70px" // 네비게이션 바 높이만큼 여백 추가
         minH="100vh"
       >
         {/* 변경되는 제목 */}
