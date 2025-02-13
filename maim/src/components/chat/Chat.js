@@ -144,17 +144,8 @@ const Chat = ({ initialMessage, onEndChat }) => {
 
     setIsLoading(true);
     try {
-      await saveConversation(session, messages, sessionId);
-
-      toast({
-        title: '대화가 저장되었습니다.',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-
-      // 상위 컴포넌트에 알림
-      onEndChat(messages);
+      // sessionId도 함께 전달
+      onEndChat(messages, sessionId);
     } catch (error) {
       console.error('Error ending chat:', error);
       toast({

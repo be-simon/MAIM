@@ -1,6 +1,6 @@
 import { getAuthenticatedClient } from './client';
 
-export async function saveConversation(session, messages, sessionId = null) {
+export async function saveConversation(session, messages, sessionId = null, summary = null) {
   try {
     const supabase = getAuthenticatedClient(session);
 
@@ -10,7 +10,8 @@ export async function saveConversation(session, messages, sessionId = null) {
       .insert({
         user_id: session.user.id,
         session_id: sessionId,
-        title: messages[0]?.content?.slice(0, 100) || 'New Conversation'
+        title: messages[0]?.content?.slice(0, 100) || 'New Conversation',
+        summary: summary
       })
       .select()
       .single();

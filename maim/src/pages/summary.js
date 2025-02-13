@@ -7,19 +7,28 @@ export default function SummaryPage() {
   const [summaryData, setSummaryData] = useState(null);
 
   useEffect(() => {
-    console.log('Router query:', router.query); // 라우터 쿼리 확인
-    
+    if (!router.isReady) return;  // 라우터가 준비될 때까지 대기
+
+    console.log('Router is ready');
+    console.log('Router query:', router.query);
+
     if (router.query.data) {
       try {
-        const parsedData = JSON.parse(router.query.data);
-        console.log('Parsed summary data:', parsedData); // 파싱된 데이터 확인
+        // URL 디코딩 후 파싱
+        const decodedData = decodeURIComponent(router.query.data);
+        console.log('Decoded data:', decodedData);
+        
+        const parsedData = JSON.parse(decodedData);
+        console.log('Parsed summary data:', parsedData);
+        
         setSummaryData(parsedData);
       } catch (error) {
         console.error('Error parsing summary data:', error);
+        console.error('Raw data:', router.query.data);
         router.push('/');
       }
     }
-  }, [router.query]);
+  }, [router.isReady, router.query]);
 
   const handleReturnHome = () => {
     router.push('/');

@@ -1,27 +1,18 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import Chat from '@/components/chat/Chat';
+import { saveConversation } from '@/lib/supabase/conversations';
 
 export default function ChatPage() {
   const router = useRouter();
-  const [message, setMessage] = useState(null);
+  const { initialMessage } = router.query;
+  const { data: session } = useSession();
 
-  useEffect(() => {
-    if (router.isReady) {
-      if (!router.query.initialMessage) {
-        router.replace('/');
-      } else {
-        setMessage(router.query.initialMessage);
-      }
-    }
-  }, [router.isReady]);
-
-  const handleEndChat = async (messages) => {
+  const handleEndChat = async (messages, sessionId) => {
     try {
-      console.log('Chat messages:', messages);
-
-      // 1. 요약 생성
-      const summaryResponse = await fetch('/api/summary', {
+      // 1. 요약 API 호출
+      const response = await fetch('/api/summary', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -29,42 +20,39 @@ export default function ChatPage() {
         body: JSON.stringify({ messages }),
       });
 
-      if (!summaryResponse.ok) {
-        throw new Error('Failed to get summary');
-      }
+      const summaryData = await response.json();
+      console.log('Summary API Response:', summaryData);  // 응답 구조 확인
 
-      const summaryData = await summaryResponse.json();
-      console.log('Summary API response:', summaryData);
+      // 2. 대화 저장 (summary 포함)
+      await saveConversation(session, messages, sessionId, summaryData);
 
-      // 2. 대화 저장
-      const saveResponse = await fetch('/api/conversations/save', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages,
-          ...summaryData
-        }),
-      });
+      // 3. 요약 페이지로 이동 (데이터 구조 확인)
+      const summaryForPage = {
+        summary: summaryData.summary,
+        emotions: summaryData.emotions || [],
+        insights: summaryData.insights || [],
+        actionItems: summaryData.action_items || []  // API 응답의 키 이름이 다를 수 있음
+      };
 
-      if (!saveResponse.ok) {
-        throw new Error('Failed to save conversation');
-      }
+      console.log('Data for summary page:', summaryForPage);  // 전달되는 데이터 확인
 
-      // 3. 요약 페이지로 이동
-      const encodedData = JSON.stringify(summaryData);
       router.push({
         pathname: '/summary',
-        query: { data: encodedData },
+        query: { 
+          data: encodeURIComponent(JSON.stringify(summaryForPage))
+        }
       });
     } catch (error) {
-      console.error('Error in handleEndChat:', error);
+      console.error('Error getting summary:', error);
+      // 에러가 발생해도 홈으로 이동
       router.push('/');
     }
   };
 
-  if (!message) return null;
-
-  return <Chat initialMessage={message} onEndChat={handleEndChat} />;
+  return (
+    <Chat 
+      initialMessage={initialMessage} 
+      onEndChat={handleEndChat}
+    />
+  );
 } 
