@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { messages, sessionId = `summary_${Date.now()}` } = req.body;
+    const { messages, actionItems = [], sessionId = `summary_${Date.now()}` } = req.body;
     
     // 요청 데이터 검증
     if (!messages || !Array.isArray(messages)) {
@@ -52,9 +52,9 @@ export default async function handler(req, res) {
       insights: Array.isArray(summary.insights) 
         ? summary.insights 
         : ["통찰을 생성할 수 없습니다."],
-      actionItems: Array.isArray(summary.actionItems) 
-        ? summary.actionItems 
-        : ["실천 제안을 생성할 수 없습니다."]
+      actionItems: actionItems.length > 0 
+        ? actionItems 
+        : (Array.isArray(summary.actionItems) ? summary.actionItems : ["실천 제안을 생성할 수 없습니다."])
     };
 
     return res.status(200).json(processedSummary);

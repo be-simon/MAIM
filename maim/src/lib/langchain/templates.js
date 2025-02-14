@@ -92,9 +92,6 @@ export const CHAT_TEMPLATES = {
         "insights": [
           "<대화를 통해 발견한 중요한 인사이트 1-3개>"
         ],
-        "actionItems": [
-          "<실천 제안 1-3개>"
-        ]
     `)
   ])
 };
@@ -111,7 +108,6 @@ export const RESPONSE_FORMATS = {
   SUMMARY: {
     summary: "string",
     emotions: ["string"],
-    insights: ["string"],
-    actionItems: ["string"]
+    insights: ["string"]
   }
 }; 

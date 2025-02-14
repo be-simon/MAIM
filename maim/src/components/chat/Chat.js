@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase/client';
 
 const Chat = ({ initialMessage, onEndChat }) => {
   const [messages, setMessages] = useState([]);
+  const [actionItems, setActionItems] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [input, setInput] = useState('');
   const [sessionId, setSessionId] = useState(null);
@@ -75,6 +76,11 @@ const Chat = ({ initialMessage, onEndChat }) => {
       
       const aiResponse = data?.response?.trim() || '죄송합니다. 응답을 생성할 수 없습니다.';
       
+      // action items가 있다면 수집
+      if (data.action_items && data.action_items.length > 0) {
+        setActionItems(prev => [...prev, ...data.action_items]);
+      }
+
       // AI 응답 추가
       setMessages(prev => [...prev, 
         { 
@@ -119,8 +125,8 @@ const Chat = ({ initialMessage, onEndChat }) => {
 
     setIsLoading(true);
     try {
-      // sessionId도 함께 전달
-      onEndChat(messages, sessionId);
+      // actionItems도 함께 전달
+      onEndChat(messages, sessionId, actionItems);
     } catch (error) {
       console.error('Error ending chat:', error);
       toast({
