@@ -18,22 +18,45 @@ export const authOptions = {
     async signIn({ user, account, profile }) {
       if (account.provider === 'google') {
         try {
-          // 1. Supabase Auth에 직접 사용자 생성
-          const { data: { user: supabaseUser }, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
-            email: user.email,
-            email_verified: true,
-            user_metadata: {
-              name: user.name,
-              avatar_url: user.image,
-              provider: 'google',
-            },
-          });
+          // 1. 먼저 사용자가 존재하는지 확인
+          const { data: existingUser, error: getUserError } = await supabaseAdmin.auth.admin.getUserByEmail(user.email);
 
-          if (signUpError) {
-            // 이미 존재하는 사용자인 경우 무시
-            if (signUpError.message !== 'User already registered') {
-              console.error('Supabase signup error:', signUpError);
-              return false;
+          // getUserError 처리 추가
+          if (getUserError) {
+            console.error('Error checking existing user:', getUserError);
+            return false;
+          }
+
+          let supabaseUser = existingUser?.user;
+
+          // 사용자가 존재하지 않는 경우에만 새로 생성
+          if (!supabaseUser) {
+            const { data: { user: newUser }, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
+              email: user.email,
+              email_verified: true,
+              user_metadata: {
+                name: user.name,
+                avatar_url: user.image,
+                provider: 'google',
+              },
+            });
+
+            if (signUpError) {
+              // email_exists 에러인 경우 다시 한번 사용자 조회 시도
+              if (signUpError.code === 'email_exists') {
+                const { data: retryUser, error: retryError } = await supabaseAdmin.auth.admin.getUserByEmail(user.email);
+                if (!retryError && retryUser?.user) {
+                  supabaseUser = retryUser.user;
+                } else {
+                  console.error('Supabase signup error:', signUpError);
+                  return false;
+                }
+              } else {
+                console.error('Supabase signup error:', signUpError);
+                return false;
+              }
+            } else {
+              supabaseUser = newUser;
             }
           }
 
@@ -41,7 +64,7 @@ export const authOptions = {
           const { data: userData, error: userError } = await supabaseAdmin
             .from('users')
             .upsert({
-              id: supabaseUser?.id || user.id, // 새로 생성된 ID 또는 기존 ID 사용
+              id: supabaseUser.id,
               email: user.email,
               name: user.name,
               avatar_url: user.image,
@@ -50,7 +73,7 @@ export const authOptions = {
               created_at: new Date().toISOString(),
               provider: 'google',
             }, {
-              onConflict: 'email',  // email로 충돌 처리
+              onConflict: 'email',
               returning: true,
             })
             .select()
