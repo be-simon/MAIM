@@ -1,4 +1,4 @@
-import { getAuthenticatedClient } from './client';
+import { getAuthenticatedClient, supabase } from './client';
 
 export async function saveConversation(session, messages, sessionId = null, summary = null) {
   try {
@@ -56,8 +56,10 @@ export async function saveConversation(session, messages, sessionId = null, summ
   }
 }
 
-export async function getConversations(userId) {
+export async function getConversations(userId, session) {
   try {
+    const supabase = getAuthenticatedClient(session);
+
     const { data, error } = await supabase
       .from('conversations')
       .select(`
