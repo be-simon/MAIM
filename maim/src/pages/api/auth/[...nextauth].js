@@ -47,16 +47,18 @@ export const authOptions = {
       if (account.provider === 'google') {
         try {
           // 1. 먼저 사용자가 존재하는지 확인
-          const { data: existingUser, error: getUserError } = await supabaseAdmin.auth
-            .getUserByEmail(user.email);
+          const { data: users, error: listError } = await supabaseAdmin.auth
+            .admin
+            .listUsers({
+              filter: `email.eq.${user.email}`
+            });
 
-          // getUserError 처리 추가
-          if (getUserError) {
-            console.error('Error checking existing user:', getUserError);
+          if (listError) {
+            console.error('Error listing users:', listError);
             return false;
           }
 
-          let supabaseUser = existingUser;
+          let supabaseUser = users?.length > 0 ? users[0] : null;
 
           // 사용자가 존재하지 않는 경우에만 새로 생성
           if (!supabaseUser) {
@@ -75,10 +77,13 @@ export const authOptions = {
             if (signUpError) {
               // email_exists 에러인 경우 다시 한번 사용자 조회 시도
               if (signUpError.code === 'email_exists') {
-                const { data: retryUser, error: retryError } = await supabaseAdmin.auth
-                  .getUserByEmail(user.email);
-                if (!retryError && retryUser) {
-                  supabaseUser = retryUser;
+                const { data: retryUsers, error: retryError } = await supabaseAdmin.auth
+                  .admin
+                  .listUsers({
+                    filter: `email.eq.${user.email}`
+                  });
+                if (!retryError && retryUsers?.length > 0) {
+                  supabaseUser = retryUsers[0];
                 } else {
                   console.error('Supabase signup error:', signUpError);
                   return false;
