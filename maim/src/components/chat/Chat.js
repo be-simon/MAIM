@@ -3,7 +3,6 @@ import { VStack, Box, useToast, Modal, ModalOverlay, ModalContent, ModalBody, Fl
 import { useSession } from 'next-auth/react';
 import MessageList from './MessageList';
 import ChatInput from './ChatInput';
-import { saveConversation } from '@/lib/supabase/conversations';
 import { supabase } from '@/lib/supabase/client';
 
 const Chat = ({ initialMessage, onEndChat }) => {
@@ -15,7 +14,6 @@ const Chat = ({ initialMessage, onEndChat }) => {
   const { data: session } = useSession();
   const toast = useToast();
   const initialMessageRef = useRef(false);
-  const [isSessionInitialized, setIsSessionInitialized] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
 
   // 세션 상태 모니터링

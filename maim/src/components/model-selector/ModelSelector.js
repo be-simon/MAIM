@@ -5,8 +5,7 @@ import {
   MenuItem,
   Button,
   Text,
-  VStack,
-  HStack
+  VStack
 } from '@chakra-ui/react';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 import { GPT_MODELS } from "@/lib/constants/models";

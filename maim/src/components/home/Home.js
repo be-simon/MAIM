@@ -6,7 +6,6 @@ import {
   Button, 
   VStack,
 } from '@chakra-ui/react';
-import { ModelSelector } from "@/components/model-selector/ModelSelector";
 
 const TITLES = [
   "오늘은 무슨 일이 있었나요?",

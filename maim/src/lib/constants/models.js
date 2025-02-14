@@ -23,7 +23,7 @@ export const GPT_MODELS = {
 };
 
 // 기본 모델 설정
-export const DEFAULT_MODEL = 'GPT4_TURBO';
+export const DEFAULT_MODEL = 'GPT35_TURBO';
 
 // 모델 유효성 검사
 export function isValidModel(model) {

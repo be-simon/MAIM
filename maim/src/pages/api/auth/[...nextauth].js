@@ -1,9 +1,7 @@
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import jwt from 'jsonwebtoken';
-import { supabase } from '@/lib/supabase/client';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import { v5 as uuidv5 } from 'uuid';
 
 // UUID 네임스페이스 생성 (고정된 값 사용)
 const UUID_NAMESPACE = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
