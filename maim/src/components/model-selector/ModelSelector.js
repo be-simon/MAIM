@@ -24,19 +24,27 @@ export function ModelSelector() {
         variant="outline"
         minW="180px"
         textAlign="left"
+        color="whiteAlpha.900"
+        borderColor="whiteAlpha.300"
+        _hover={{ bg: "whiteAlpha.200" }}
       >
         {currentModelData.name}
       </MenuButton>
-      <MenuList>
+      <MenuList
+        bg="gray.800"
+        borderColor="gray.700"
+      >
         {Object.entries(GPT_MODELS).map(([key, model]) => (
           <MenuItem 
             key={key} 
             onClick={() => setModel(key)}
             py={2}
+            bg="gray.800"
+            _hover={{ bg: "gray.700" }}
           >
             <VStack align="start" spacing={0}>
-              <Text fontWeight="medium">{model.name}</Text>
-              <Text fontSize="xs" color="gray.500">
+              <Text fontWeight="medium" color="whiteAlpha.900">{model.name}</Text>
+              <Text fontSize="xs" color="whiteAlpha.600">
                 {model.description}
               </Text>
             </VStack>

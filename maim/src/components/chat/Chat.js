@@ -103,31 +103,6 @@ const Chat = ({ initialMessage, onEndChat }) => {
     }
   };
 
-  const handleRandomQuestion = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/random-question');
-      const data = await response.json();
-      if (data.question) {
-        const aiResponse = data.question.trim();
-        setMessages(prev => [...prev, 
-          { type: 'ai', content: aiResponse }
-        ]);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: '오류가 발생했습니다.',
-        description: '랜덤 질문을 가져오는데 실패했습니다.',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleEndChat = async () => {
     if (!session) {
       toast({
@@ -161,7 +136,7 @@ const Chat = ({ initialMessage, onEndChat }) => {
   };
 
   return (
-    <Box h="100vh" bg="gray.50">
+    <Box h="100vh" bg="gray.900">
       <VStack spacing={0} h="100%">
         <Box 
           flex="1" 
@@ -175,7 +150,6 @@ const Chat = ({ initialMessage, onEndChat }) => {
           input={input}
           setInput={setInput}
           onSend={sendMessage}
-          onRandomQuestion={handleRandomQuestion}
           onEndChat={handleEndChat}
           isLoading={isLoading}
         />

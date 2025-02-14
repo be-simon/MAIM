@@ -19,7 +19,7 @@ import { ModelSelector } from "@/components/model-selector/ModelSelector";
 
 const Navbar = () => {
   const router = useRouter();
-  const bgColor = useColorModeValue('white', 'gray.800');
+  const bgColor = useColorModeValue('gray.800', 'gray.900');
   const { data: session } = useSession();
 
   // 이메일의 첫 글자를 아바타 텍스트로 사용
@@ -30,17 +30,20 @@ const Navbar = () => {
       as="nav" 
       bg={bgColor}
       p={4} 
-      shadow="sm"
+      shadow="dark-lg"
       position="fixed"
       top={0}
       left={0}
       right={0}
       zIndex={10}
+      color="whiteAlpha.900"
     >
       <HStack spacing={4}>
         <Button
           variant="ghost"
           onClick={() => router.push('/')}
+          color="whiteAlpha.900"
+          _hover={{ bg: "whiteAlpha.200" }}
         >
           MAIM
         </Button>
@@ -51,12 +54,16 @@ const Navbar = () => {
         <Button
           variant="ghost"
           onClick={() => router.push('/history')}
+          color="whiteAlpha.900"
+          _hover={{ bg: "whiteAlpha.200" }}
         >
           대화 기록
         </Button>
         <Button
           variant="ghost"
           onClick={() => router.push('/action-items')}
+          color="whiteAlpha.900"
+          _hover={{ bg: "whiteAlpha.200" }}
         >
           액션 아이템
         </Button>
@@ -75,19 +82,30 @@ const Navbar = () => {
                 {!session.user?.image && avatarText}
               </Avatar>
             </MenuButton>
-            <MenuList>
-              <MenuItem>
+            <MenuList
+              bg="gray.800"
+              borderColor="gray.700"
+            >
+              <MenuItem
+                bg="gray.800"
+                _hover={{ bg: "gray.700" }}
+              >
                 <VStack align="start" spacing={1} w="100%">
-                  <Text fontWeight="bold">
+                  <Text fontWeight="bold" color="whiteAlpha.900">
                     {session.user?.name}
                   </Text>
-                  <Text fontSize="sm" color="gray.500">
+                  <Text fontSize="sm" color="whiteAlpha.600">
                     {session.user?.email}
                   </Text>
                 </VStack>
               </MenuItem>
-              <Divider />
-              <MenuItem onClick={() => signOut()}>
+              <Divider borderColor="gray.600" />
+              <MenuItem 
+                bg="gray.800"
+                _hover={{ bg: "gray.700" }}
+                color="whiteAlpha.900"
+                onClick={() => signOut()}
+              >
                 로그아웃
               </MenuItem>
             </MenuList>

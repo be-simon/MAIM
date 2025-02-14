@@ -1,5 +1,6 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import { Box } from '@chakra-ui/react';
 import Summary from '@/components/summary/Summary';
 import { parseSummaryData } from '@/utils/summaryParser';
 
@@ -34,9 +35,11 @@ export default function SummaryPage() {
 
   // 데이터가 없는 경우에도 onReturnHome은 전달
   return (
-    <Summary 
-      data={summaryData} 
-      onReturnHome={handleReturnHome}
-    />
+    <Box minH="100vh" bg="gray.900">
+      <Summary 
+        data={summaryData} 
+        onReturnHome={handleReturnHome}
+      />
+    </Box>
   );
 } 

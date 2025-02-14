@@ -80,11 +80,23 @@ export default function HistoryDetail() {
 
   if (isLoading) {
     return (
-      <Container maxW="container.md" py={8}>
+      <Container maxW="container.md" py={8} minH="100vh" bg="gray.900">
         <VStack spacing={4} align="stretch">
-          <Skeleton height="40px" />
-          <Skeleton height="100px" />
-          <Skeleton height="400px" />
+          <Skeleton 
+            height="40px" 
+            startColor="gray.700"
+            endColor="gray.800"
+          />
+          <Skeleton 
+            height="100px"
+            startColor="gray.700"
+            endColor="gray.800"
+          />
+          <Skeleton 
+            height="400px"
+            startColor="gray.700"
+            endColor="gray.800"
+          />
         </VStack>
       </Container>
     );
@@ -95,9 +107,11 @@ export default function HistoryDetail() {
   };
 
   return (
-    <Summary 
-      data={summaryData} 
-      onReturnHome={handleReturnHome}
-    />
+    <Box minH="100vh" bg="gray.900">
+      <Summary 
+        data={summaryData} 
+        onReturnHome={handleReturnHome}
+      />
+    </Box>
   );
 } 

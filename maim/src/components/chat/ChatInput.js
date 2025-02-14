@@ -22,8 +22,8 @@ const ChatInput = ({ input, setInput, onSend, onRandomQuestion, onEndChat, isLoa
       maxW="1000px" 
       mx="auto"
       borderTop="1px"
-      borderColor="gray.200"
-      bg="white"
+      borderColor="gray.600"
+      bg="gray.800"
       position="fixed"
       bottom="0"
       left="50%"
@@ -32,19 +32,8 @@ const ChatInput = ({ input, setInput, onSend, onRandomQuestion, onEndChat, isLoa
     >
       <form onSubmit={handleSubmit}>
         <VStack spacing={3}>
-          {/* CTA 버튼 영역 */}
+          {/* CTA 버튼 영역 - 대화 종료 버튼만 남김 */}
           <HStack w="100%" spacing={4} justify="center">
-            <Button 
-              onClick={onRandomQuestion}
-              disabled={isLoading}
-              colorScheme="teal"
-              type="button"
-              size="md"
-              flex="1"
-              maxW="200px"
-            >
-              질문 뽑기
-            </Button>
             <Button 
               onClick={onEndChat}
               disabled={isLoading}
@@ -53,6 +42,10 @@ const ChatInput = ({ input, setInput, onSend, onRandomQuestion, onEndChat, isLoa
               size="md"
               flex="1"
               maxW="200px"
+              variant="solid"
+              bg="red.600"
+              color="white"
+              _hover={{ bg: "red.700" }}
             >
               대화 종료
             </Button>
@@ -75,9 +68,14 @@ const ChatInput = ({ input, setInput, onSend, onRandomQuestion, onEndChat, isLoa
               borderRadius="lg"
               fontSize="lg"
               flex="1"
+              bg="gray.700"
+              color="whiteAlpha.900"
+              borderColor="gray.600"
+              _hover={{ borderColor: "gray.500" }}
+              _placeholder={{ color: "whiteAlpha.400" }}
               _focus={{
-                borderColor: "blue.400",
-                boxShadow: "0 0 0 1px blue.400"
+                borderColor: "blue.500",
+                boxShadow: "0 0 0 1px blue.500"
               }}
             />
             <Button 
@@ -87,6 +85,8 @@ const ChatInput = ({ input, setInput, onSend, onRandomQuestion, onEndChat, isLoa
               size="lg"
               h="80px"
               w="100px"
+              variant="solid"
+              _hover={{ bg: "blue.600" }}
             >
               전송
             </Button>

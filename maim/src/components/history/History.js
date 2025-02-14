@@ -137,22 +137,22 @@ const History = () => {
   };
 
   return (
-    <Box maxW="4xl" mx="auto" p={6}>
+    <Box maxW="4xl" mx="auto" p={6} minH="100vh" bg="gray.900">
       {status === 'loading' ? (
-        <Text textAlign="center">로딩 중...</Text>
+        <Text textAlign="center" color="whiteAlpha.900">로딩 중...</Text>
       ) : (
         <VStack spacing={8} align="stretch">
-          <Heading size="lg" textAlign="center">대화 기록</Heading>
+          <Heading size="lg" textAlign="center" color="whiteAlpha.900">대화 기록</Heading>
           
           {/* 필터 및 정렬 컨트롤 */}
           <Stack 
             direction={["column", "row"]} 
             spacing={4} 
             align="center"
-            bg="white"
+            bg="gray.800"
             p={4}
             borderRadius="lg"
-            shadow="sm"
+            shadow="dark-lg"
           >
             <Input
               type="date"
@@ -160,19 +160,31 @@ const History = () => {
               value={dateRange.start}
               onChange={handleDateChange}
               size="md"
+              color="whiteAlpha.900"
+              bg="gray.700"
+              borderColor="gray.600"
+              _hover={{ borderColor: "gray.500" }}
             />
-            <Text>~</Text>
+            <Text color="whiteAlpha.900">~</Text>
             <Input
               type="date"
               name="end"
               value={dateRange.end}
               onChange={handleDateChange}
               size="md"
+              color="whiteAlpha.900"
+              bg="gray.700"
+              borderColor="gray.600"
+              _hover={{ borderColor: "gray.500" }}
             />
             <Select 
               value={sortOrder}
               onChange={handleSortChange}
               width="auto"
+              color="whiteAlpha.900"
+              bg="gray.700"
+              borderColor="gray.600"
+              _hover={{ borderColor: "gray.500" }}
             >
               <option value="desc">최신순</option>
               <option value="asc">오래된순</option>
@@ -181,16 +193,16 @@ const History = () => {
 
           {/* 대화 목록 */}
           {isLoading ? (
-            <Text textAlign="center">로딩 중...</Text>
+            <Text textAlign="center" color="whiteAlpha.900">로딩 중...</Text>
           ) : conversations.length === 0 ? (
             <Box 
               textAlign="center" 
               py={8} 
-              bg="white" 
+              bg="gray.800" 
               borderRadius="lg"
-              shadow="sm"
+              shadow="dark-lg"
             >
-              <Text color="gray.500">
+              <Text color="whiteAlpha.700">
                 {dateRange.start && dateRange.end 
                   ? "해당 기간에 기록된 대화가 없습니다."
                   : "날짜를 선택해주세요."}
@@ -203,26 +215,26 @@ const History = () => {
                   key={conv.id}
                   w="full"
                   p={6}
-                  bg="white"
+                  bg="gray.800"
                   borderRadius="lg"
-                  shadow="sm"
+                  shadow="dark-lg"
                   cursor="pointer"
                   onClick={() => handleConversationClick(conv)}
                   transition="all 0.2s"
-                  _hover={{ shadow: "md", transform: "translateY(-2px)" }}
+                  _hover={{ shadow: "dark-lg", transform: "translateY(-2px)" }}
                 >
                   <Flex justify="space-between" align="center" mb={3}>
-                    <Text fontWeight="bold" fontSize="lg">
+                    <Text fontWeight="bold" fontSize="lg" color="whiteAlpha.900">
                       {/* 대화 #{conv.id} */}
                       {conv.title}
                     </Text>
-                    <Text color="gray.500" fontSize="sm">
+                    <Text color="whiteAlpha.600" fontSize="sm">
                       {new Date(conv.createdAt).toLocaleDateString()}
                     </Text>
                   </Flex>
                   
                   <Text 
-                    color="gray.700" 
+                    color="whiteAlpha.800" 
                     noOfLines={2}
                     mb={3}
                   >
@@ -249,7 +261,7 @@ const History = () => {
                 </Box>
               ))}
 
-              {/* 페이지네이션 UI 개선 */}
+              {/* 페이지네이션 UI */}
               {!isLoading && conversations.length > 0 && (
                 <Flex justify="center" mt={6} gap={2} align="center">
                   <IconButton
@@ -257,6 +269,9 @@ const History = () => {
                     onClick={() => handlePageChange(currentPage - 1)}
                     isDisabled={currentPage === 1}
                     aria-label="이전 페이지"
+                    bg="gray.800"
+                    color="whiteAlpha.900"
+                    _hover={{ bg: "gray.700" }}
                   />
                   
                   {/* 페이지 번호 버튼들 */}
@@ -279,6 +294,8 @@ const History = () => {
                         variant={currentPage === pageNum ? "solid" : "ghost"}
                         colorScheme={currentPage === pageNum ? "blue" : "gray"}
                         onClick={() => handlePageChange(pageNum)}
+                        color="whiteAlpha.900"
+                        _hover={{ bg: currentPage === pageNum ? "blue.600" : "whiteAlpha.200" }}
                       >
                         {pageNum}
                       </Button>
@@ -290,10 +307,12 @@ const History = () => {
                     onClick={() => handlePageChange(currentPage + 1)}
                     isDisabled={currentPage === totalPages}
                     aria-label="다음 페이지"
+                    bg="gray.800"
+                    color="whiteAlpha.900"
+                    _hover={{ bg: "gray.700" }}
                   />
                   
-                  {/* 전체 페이지 수 표시 */}
-                  <Text fontSize="sm" color="gray.500" ml={2}>
+                  <Text fontSize="sm" color="whiteAlpha.500" ml={2}>
                     총 {totalPages} 페이지
                   </Text>
                 </Flex>
@@ -307,6 +326,8 @@ const History = () => {
             size="lg"
             variant="ghost"
             colorScheme="blue"
+            color="whiteAlpha.900"
+            _hover={{ bg: "whiteAlpha.200" }}
           >
             홈으로 돌아가기
           </Button>

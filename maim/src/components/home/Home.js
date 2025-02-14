@@ -40,7 +40,7 @@ const Home = ({ onStartChat }) => {
   };
 
   return (
-    <Box minH="100vh" bg="gray.50">
+    <Box minH="100vh" bg="gray.900">
       {/* Main Content */}
       <VStack 
         justify="center" 
@@ -53,7 +53,7 @@ const Home = ({ onStartChat }) => {
           fontSize={["2xl", "3xl", "4xl"]}
           fontWeight="bold"
           textAlign="center"
-          color="gray.700"
+          color="whiteAlpha.900"
           transition="all 0.3s"
           px={4}
         >
@@ -64,9 +64,9 @@ const Home = ({ onStartChat }) => {
         <Box 
           w={["90%", "80%", "70%"]}
           maxW="800px"
-          bg="white"
+          bg="gray.800"
           borderRadius="lg"
-          boxShadow="lg"
+          boxShadow="dark-lg"
           p={6}
         >
           <VStack spacing={4}>
@@ -79,8 +79,10 @@ const Home = ({ onStartChat }) => {
               p={4}
               fontSize="lg"
               border="2px solid"
-              borderColor="gray.200"
-              _hover={{ borderColor: "gray.300" }}
+              borderColor="gray.600"
+              bg="gray.700"
+              color="whiteAlpha.900"
+              _hover={{ borderColor: "gray.500" }}
               _focus={{ 
                 borderColor: "blue.500",
                 boxShadow: "0 0 0 1px blue.500"

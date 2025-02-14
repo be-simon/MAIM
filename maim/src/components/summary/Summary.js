@@ -22,9 +22,15 @@ const Summary = ({ data, onReturnHome }) => {
   // 데이터가 없는 경우 처리
   if (!data) {
     return (
-      <Box maxW="800px" mx="auto" p={6} textAlign="center">
-        <Text>요약 데이터를 불러올 수 없습니다.</Text>
-        <Button onClick={onReturnHome} mt={4}>
+      <Box maxW="800px" mx="auto" p={6} textAlign="center" color="whiteAlpha.900">
+        <Text color="whiteAlpha.900">요약 데이터를 불러올 수 없습니다.</Text>
+        <Button 
+          onClick={onReturnHome} 
+          mt={4}
+          colorScheme="blue"
+          variant="solid"
+          _hover={{ bg: "blue.600" }}
+        >
           홈으로 돌아가기
         </Button>
       </Box>
@@ -42,7 +48,12 @@ const Summary = ({ data, onReturnHome }) => {
   console.log('color:', getEmotionColor(emotions[0]));
 
   return (
-    <Box maxW="800px" mx="auto" p={6}>
+    <Box 
+      maxW="800px" 
+      mx="auto" 
+      p={6} 
+      color="whiteAlpha.900"
+    >
       <VStack spacing={8} align="stretch">
         <Heading size="lg" textAlign="center">
           {new Date().toLocaleDateString()}의 기록
@@ -55,7 +66,7 @@ const Summary = ({ data, onReturnHome }) => {
           </Text>
         </Box>
 
-        <Divider />
+        <Divider borderColor="gray.600" />
 
         <Box>
           <Heading size="md" mb={3}>감정 분석</Heading>
@@ -74,7 +85,7 @@ const Summary = ({ data, onReturnHome }) => {
           </Wrap>
         </Box>
 
-        <Divider />
+        <Divider borderColor="gray.600" />
 
         {/* 인사이트 섹션 */}
         <Box>
@@ -86,7 +97,7 @@ const Summary = ({ data, onReturnHome }) => {
                 display="flex"
                 alignItems="flex-start"
                 p={3}
-                bg="blue.50"
+                bg="blue.900"
                 borderRadius="md"
               >
                 <ListIcon 
@@ -94,7 +105,10 @@ const Summary = ({ data, onReturnHome }) => {
                   color="blue.500" 
                   mt={1}
                 />
-                <Text fontSize="md">
+                <Text 
+                  fontSize="md"
+                  color="whiteAlpha.900"
+                >
                   {insight}
                 </Text>
               </ListItem>
@@ -112,7 +126,7 @@ const Summary = ({ data, onReturnHome }) => {
                 display="flex"
                 alignItems="flex-start"
                 p={3}
-                bg="green.50"
+                bg="green.900"
                 borderRadius="md"
               >
                 <ListIcon 
@@ -120,7 +134,10 @@ const Summary = ({ data, onReturnHome }) => {
                   color="green.500" 
                   mt={1}
                 />
-                <Text fontSize="md">
+                <Text 
+                  fontSize="md"
+                  color="whiteAlpha.900"
+                >
                   {item}
                 </Text>
               </ListItem>
@@ -133,6 +150,8 @@ const Summary = ({ data, onReturnHome }) => {
           size="lg" 
           onClick={onReturnHome}
           mt={6}
+          variant="solid"
+          _hover={{ bg: "blue.600" }}
         >
           새로운 대화 시작하기
         </Button>
