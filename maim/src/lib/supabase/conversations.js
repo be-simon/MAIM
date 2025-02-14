@@ -87,9 +87,16 @@ export async function getConversations(userId, session) {
   }
 }
 
-export async function getConversation(id, userId) {
+export async function getConversation(id, userId, session) {
   try {
-    const { data, error } = await supabase
+    if (!id || !userId || !session) {
+      throw new Error('ID, 사용자 ID, 세션이 필요합니다.');
+    }
+
+    // session 전달
+    const supabaseClient = getAuthenticatedClient(session);
+    
+    const { data, error } = await supabaseClient
       .from('conversations')
       .select(`
         *,
@@ -109,7 +116,17 @@ export async function getConversation(id, userId) {
       .eq('user_id', userId)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null;
+      }
+      throw error;
+    }
+
+    if (!data) {
+      return null;
+    }
+
     return data;
   } catch (error) {
     console.error('Error fetching conversation:', error);
@@ -144,4 +161,29 @@ export async function deleteConversation(id, userId) {
     console.error('Error deleting conversation:', error);
     throw error;
   }
+}
+
+export async function getConversationById(id) {
+  const { data, error } = await supabase
+    .from('conversations')
+    .select(`
+      *,
+      messages (
+        content,
+        type,
+        additional_kwargs,
+        created_at
+      ),
+      action_items (
+        id,
+        content,
+        completed,
+        created_at
+      )
+    `)
+    .eq('id', id)
+    .single();
+
+  if (error) throw error;
+  return data;
 } 

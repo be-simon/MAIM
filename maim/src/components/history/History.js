@@ -16,6 +16,8 @@ import {
   IconButton
 } from '@chakra-ui/react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
+import { parseSummaryData } from '@/utils/summaryParser';
+import { getEmotionColor } from '@/utils/emotionUtils';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -75,7 +77,15 @@ const History = () => {
       }
 
       const data = await response.json();
-      setConversations(data.conversations);
+      console.log('Fetched data:', data);
+      
+      // conversations 데이터의 summary 필드를 파싱
+      const parsedConversations = data.conversations.map(conv => ({
+        ...conv,
+        summary: parseSummaryData(conv.summary)
+      }));
+
+      setConversations(parsedConversations);
       setTotalPages(Math.ceil(data.total / ITEMS_PER_PAGE));
       setCurrentPage(page);
     } catch (error) {
@@ -122,33 +132,8 @@ const History = () => {
     }
   };
 
-  const handleConversationClick = async (conv) => {
-    try {
-      console.log('Conversation data:', conv);
-
-      // 이미 저장된 요약 데이터가 있으면 그대로 사용
-      const summaryData = {
-        summary: conv.summary,
-        emotions: conv.emotions,
-        insights: conv.insights,
-        actionItems: conv.actionItems
-      };
-
-      const encodedData = JSON.stringify(summaryData);
-      
-      router.push({
-        pathname: '/summary',
-        query: { data: encodedData }
-      });
-    } catch (error) {
-      console.error('Error in handleConversationClick:', error);
-      toast({
-        title: '요약 페이지로 이동하는데 실패했습니다.',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      });
-    }
+  const handleConversationClick = (conv) => {
+    router.push(`/history/${conv.id}`);
   };
 
   return (
@@ -228,7 +213,8 @@ const History = () => {
                 >
                   <Flex justify="space-between" align="center" mb={3}>
                     <Text fontWeight="bold" fontSize="lg">
-                      대화 #{conv.id}
+                      {/* 대화 #{conv.id} */}
+                      {conv.title}
                     </Text>
                     <Text color="gray.500" fontSize="sm">
                       {new Date(conv.createdAt).toLocaleDateString()}
@@ -240,17 +226,16 @@ const History = () => {
                     noOfLines={2}
                     mb={3}
                   >
-                    {conv.summary}
+                    {conv.summary.summary}
                   </Text>
 
                   {/* 감정 키워드 */}
-                  {conv.emotions && conv.emotions.length > 0 && (
+                  {conv.summary.emotions && conv.summary.emotions.length > 0 && (
                     <Flex gap={2} flexWrap="wrap">
-                      {conv.emotions.map((emotion, idx) => (
+                      {conv.summary.emotions.map((emotion, idx) => (
                         <Badge
                           key={idx}
-                          colorScheme={emotion.score >= 0.7 ? "green" : 
-                                     emotion.score >= 0.4 ? "blue" : "red"}
+                          colorScheme={getEmotionColor(emotion)}
                           variant="subtle"
                           px={2}
                           py={1}

@@ -13,14 +13,14 @@ import {
   ListIcon
 } from '@chakra-ui/react';
 import { CheckCircleIcon } from '@chakra-ui/icons';
+import { getEmotionColor } from '@/utils/emotionUtils';
 
 const Summary = ({ data, onReturnHome }) => {
   // 원본 데이터 로깅
-  console.log('Raw Summary data:', JSON.stringify(data, null, 2));
+  console.log('Raw Summary data:', data);
 
   // 데이터가 없는 경우 처리
   if (!data) {
-    console.log('No data provided to Summary component');
     return (
       <Box maxW="800px" mx="auto" p={6} textAlign="center">
         <Text>요약 데이터를 불러올 수 없습니다.</Text>
@@ -31,43 +31,15 @@ const Summary = ({ data, onReturnHome }) => {
     );
   }
 
-  // getEmotionColor 함수 수정 - 감정 종류에 따른 색상 지정
-  const getEmotionColor = (emotion) => {
-    const emotionColors = {
-      '스트레스': 'red',
-      '불안': 'orange',
-      '걱정': 'yellow',
-      '피로': 'purple',
-      '희망': 'green',
-      '기쁨': 'green',
-      '성취감': 'blue',
-      '만족': 'teal',
-      '분노': 'red',
-      '슬픔': 'blue',
-      '우울': 'gray'
-    };
-    
-    // 기본 색상 반환
-    return emotionColors[emotion] || 'gray';
-  };
-
   const {
-    summary = "대화 내용을 요약할 수 없습니다.",
-    emotions = [],
-    insights = [],
-    actionItems = []
+    summary,
+    emotions,
+    insights,
+    actionItems
   } = data;
 
-  // 구조 분해된 데이터 상세 로깅
-  console.log('Emotions data type:', typeof emotions);
-  console.log('Emotions array contents:', emotions.map(e => ({
-    type: typeof e,
-    value: e,
-    keys: typeof e === 'object' ? Object.keys(e) : null
-  })));
-
-  // 인사이트와 액션 아이템을 하나의 배열로 통합
-  const combinedInsights = [...insights, ...actionItems];
+  console.log('emotion:', emotions[0]);
+  console.log('color:', getEmotionColor(emotions[0]));
 
   return (
     <Box maxW="800px" mx="auto" p={6}>
@@ -95,7 +67,7 @@ const Summary = ({ data, onReturnHome }) => {
                   colorScheme={getEmotionColor(emotion)}
                   variant="solid"
                 >
-                  {emotion}
+                  {emotion.label}
                 </Tag>
               </WrapItem>
             ))}
@@ -104,17 +76,43 @@ const Summary = ({ data, onReturnHome }) => {
 
         <Divider />
 
-        {/* 통합된 인사이트 및 액션 플랜 섹션 */}
+        {/* 인사이트 섹션 */}
         <Box>
-          <Heading size="md" mb={4}>인사이트 & 액션 플랜</Heading>
+          <Heading size="md" mb={4}>인사이트</Heading>
           <List spacing={3}>
-            {combinedInsights.map((item, index) => (
+            {insights.map((insight, index) => (
               <ListItem 
                 key={index}
                 display="flex"
                 alignItems="flex-start"
                 p={3}
-                bg="gray.50"
+                bg="blue.50"
+                borderRadius="md"
+              >
+                <ListIcon 
+                  as={CheckCircleIcon} 
+                  color="blue.500" 
+                  mt={1}
+                />
+                <Text fontSize="md">
+                  {insight}
+                </Text>
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+
+        {/* 액션 플랜 섹션 */}
+        <Box>
+          <Heading size="md" mb={4}>액션 플랜</Heading>
+          <List spacing={3}>
+            {actionItems.map((item, index) => (
+              <ListItem 
+                key={index}
+                display="flex"
+                alignItems="flex-start"
+                p={3}
+                bg="green.50"
                 borderRadius="md"
               >
                 <ListIcon 

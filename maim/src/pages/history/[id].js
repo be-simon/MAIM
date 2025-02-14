@@ -17,16 +17,17 @@ import {
 import { ChevronLeftIcon } from '@chakra-ui/icons';
 import { getConversation, deleteConversation, toggleActionItem } from '@/lib/supabase/conversations';
 import MessageList from '@/components/chat/MessageList';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import Summary from '@/components/summary/Summary';
+import { getConversationById } from '@/lib/supabase/conversations';
+import { parseSummaryData } from '@/utils/summaryParser';
 
-export default function ConversationDetail() {
+export default function HistoryDetail() {
   const router = useRouter();
   const { id } = router.query;
   const { data: session, status } = useSession();
-  const [conversation, setConversation] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const toast = useToast();
+  const [summaryData, setSummaryData] = useState(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -36,26 +37,46 @@ export default function ConversationDetail() {
 
   useEffect(() => {
     async function loadConversation() {
-      if (id && session?.user?.id) {
-        try {
-          const data = await getConversation(id, session.user.id);
-          setConversation(data);
-        } catch (error) {
-          console.error('Error loading conversation:', error);
+      if (!id || !session?.user?.id) return;
+      
+      try {
+        setIsLoading(true);
+        
+        const conversation = await getConversation(id, session.user.id, session);
+        const summaryData = conversation.summary;
+        console.log('Summary data:', summaryData);
+
+        if (!conversation) {
           toast({
-            title: '대화를 불러오는데 실패했습니다.',
+            title: '대화를 찾을 수 없습니다.',
             status: 'error',
             duration: 3000,
             isClosable: true,
           });
-        } finally {
-          setIsLoading(false);
+          router.push('/history');
+          return;
         }
+
+        const normalizedData = parseSummaryData(summaryData);
+
+        console.log('Normalized data:', normalizedData);
+        setSummaryData(normalizedData);
+      } catch (error) {
+        console.error('Error loading conversation:', error);
+        toast({
+          title: '대화를 불러오는데 실패했습니다.',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+        router.push('/history');
+      } finally {
+        setIsLoading(false);
       }
     }
 
     loadConversation();
-  }, [id, session, toast]);
+  }, [id, session, toast, router]);
 
   if (isLoading) {
     return (
@@ -69,105 +90,14 @@ export default function ConversationDetail() {
     );
   }
 
-  if (!conversation) {
-    return (
-      <Container maxW="container.md" py={8}>
-        <Text>대화를 찾을 수 없습니다.</Text>
-      </Container>
-    );
-  }
+  const handleReturnHome = () => {
+    router.push('/history');
+  };
 
   return (
-    <Container maxW="container.md" py={8}>
-      <VStack spacing={6} align="stretch">
-        <HStack justify="space-between">
-          <Button
-            leftIcon={<ChevronLeftIcon />}
-            variant="ghost"
-            onClick={() => router.push('/history')}
-          >
-            대화 목록으로
-          </Button>
-          <Button
-            colorScheme="red"
-            variant="ghost"
-            onClick={async () => {
-              try {
-                await deleteConversation(id, session.user.id);
-                toast({
-                  title: '대화가 삭제되었습니다.',
-                  status: 'success',
-                  duration: 3000,
-                  isClosable: true,
-                });
-                router.push('/history');
-              } catch (error) {
-                toast({
-                  title: '삭제 실패',
-                  description: '대화를 삭제하는 중 오류가 발생했습니다.',
-                  status: 'error',
-                  duration: 3000,
-                  isClosable: true,
-                });
-              }
-            }}
-          >
-            삭제
-          </Button>
-        </HStack>
-
-        <Box>
-          <Heading size="lg" mb={2}>{conversation.title}</Heading>
-          <Text color="gray.500" fontSize="sm">
-            {format(new Date(conversation.created_at), 'PPP', { locale: ko })}
-          </Text>
-        </Box>
-
-        <Box bg="purple.50" p={4} borderRadius="md">
-          <Heading size="sm" mb={2} color="purple.700">대화 요약</Heading>
-          <Text color="purple.900">{conversation.summary}</Text>
-        </Box>
-
-        {conversation.action_items?.length > 0 && (
-          <Box bg="blue.50" p={4} borderRadius="md">
-            <Heading size="sm" mb={3} color="blue.700">액션 아이템</Heading>
-            <VStack align="stretch" spacing={2}>
-              {conversation.action_items.map((item, index) => (
-                <HStack key={index} spacing={3}>
-                  <Badge 
-                    colorScheme={item.completed ? 'green' : 'gray'}
-                    cursor="pointer"
-                    onClick={async () => {
-                      try {
-                        await toggleActionItem(item.id, !item.completed);
-                        const data = await getConversation(id, session.user.id);
-                        setConversation(data);
-                      } catch (error) {
-                        toast({
-                          title: '상태 변경 실패',
-                          status: 'error',
-                          duration: 3000,
-                          isClosable: true,
-                        });
-                      }
-                    }}
-                  >
-                    {item.completed ? '완료' : '미완료'}
-                  </Badge>
-                  <Text color="blue.900">{item.content}</Text>
-                </HStack>
-              ))}
-            </VStack>
-          </Box>
-        )}
-
-        <Divider />
-
-        <Box>
-          <Heading size="md" mb={4}>대화 내용</Heading>
-          <MessageList messages={conversation.messages} />
-        </Box>
-      </VStack>
-    </Container>
+    <Summary 
+      data={summaryData} 
+      onReturnHome={handleReturnHome}
+    />
   );
 } 

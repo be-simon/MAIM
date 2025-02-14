@@ -1,6 +1,7 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Summary from '@/components/summary/Summary';
+import { parseSummaryData } from '@/utils/summaryParser';
 
 export default function SummaryPage() {
   const router = useRouter();
@@ -14,17 +15,14 @@ export default function SummaryPage() {
 
     if (router.query.data) {
       try {
-        // URL 디코딩 후 파싱
+        console.log('Router query data:', router.query.data);
         const decodedData = decodeURIComponent(router.query.data);
-        console.log('Decoded data:', decodedData);
-        
-        const parsedData = JSON.parse(decodedData);
-        console.log('Parsed summary data:', parsedData);
-        
-        setSummaryData(parsedData);
+        const normalizedData = parseSummaryData(decodedData);
+
+        console.log('Normalized data:', normalizedData);
+        setSummaryData(normalizedData);
       } catch (error) {
-        console.error('Error parsing summary data:', error);
-        console.error('Raw data:', router.query.data);
+        console.error('Error processing summary data:', error);
         router.push('/');
       }
     }
