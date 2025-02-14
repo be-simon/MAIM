@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { VStack, Box, useToast } from '@chakra-ui/react';
+import { VStack, Box, useToast, Modal, ModalOverlay, ModalContent, ModalBody, Flex, Text, Spinner } from '@chakra-ui/react';
 import { useSession } from 'next-auth/react';
 import MessageList from './MessageList';
 import ChatInput from './ChatInput';
@@ -16,6 +16,7 @@ const Chat = ({ initialMessage, onEndChat }) => {
   const toast = useToast();
   const initialMessageRef = useRef(false);
   const [isSessionInitialized, setIsSessionInitialized] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
 
   // 세션 상태 모니터링
   useEffect(() => {
@@ -121,12 +122,9 @@ const Chat = ({ initialMessage, onEndChat }) => {
       return;
     }
 
-    console.log('Current session:', session);  // 세션 객체 확인
-
-    setIsLoading(true);
+    setIsSummarizing(true); // 요약 시작
     try {
-      // actionItems도 함께 전달
-      onEndChat(messages, sessionId, actionItems);
+      await onEndChat(messages, sessionId, actionItems);
     } catch (error) {
       console.error('Error ending chat:', error);
       toast({
@@ -137,7 +135,7 @@ const Chat = ({ initialMessage, onEndChat }) => {
         isClosable: true,
       });
     } finally {
-      setIsLoading(false);
+      setIsSummarizing(false); // 요약 완료
     }
   };
 
@@ -160,9 +158,37 @@ const Chat = ({ initialMessage, onEndChat }) => {
           setInput={setInput}
           onSend={sendMessage}
           onEndChat={handleEndChat}
-          isLoading={isLoading}
+          isLoading={isLoading || isSummarizing}
         />
       </VStack>
+
+      {/* 요약 중 모달 */}
+      <Modal isOpen={isSummarizing} closeOnOverlayClick={false} isCentered>
+        <ModalOverlay
+          bg="blackAlpha.300"
+          backdropFilter="blur(10px)"
+        />
+        <ModalContent bg="gray.800" py={6}>
+          <ModalBody>
+            <Flex direction="column" align="center" gap={4}>
+              <Spinner 
+                size="xl" 
+                color="blue.400" 
+                thickness="4px"
+                speed="0.8s"
+              />
+              <Text color="whiteAlpha.900" fontSize="lg" fontWeight="medium">
+                대화 내용을 요약하고 있습니다...
+              </Text>
+              <Text color="whiteAlpha.600" fontSize="sm" textAlign="center">
+                AI가 대화를 분석하고 주요 내용과 감정을 추출하고 있습니다.
+                <br />
+                잠시만 기다려주세요.
+              </Text>
+            </Flex>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 };
