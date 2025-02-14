@@ -7,21 +7,27 @@ export default withAuth({
       if (req.nextUrl.pathname.startsWith('/auth')) {
         return true;
       }
-      // 다른 페이지는 토큰이 있어야 접근 가능
-      return !!token;
+      
+      // 모든 보호된 경로는 토큰 필요 (홈페이지 포함)
+      if (req.nextUrl.pathname === '/' || 
+          req.nextUrl.pathname.startsWith('/chat') || 
+          req.nextUrl.pathname.startsWith('/summary') ||
+          req.nextUrl.pathname.startsWith('/history')) {
+        return !!token;
+      }
+      
+      // 기본적으로 접근 허용
+      return true;
     },
   },
 });
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api/auth (auth API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api/auth|_next/static|_next/image|favicon.ico).*)',
+    '/',
+    '/chat/:path*',
+    '/summary/:path*',
+    '/history/:path*',
+    '/auth/:path*'
   ],
 }; 

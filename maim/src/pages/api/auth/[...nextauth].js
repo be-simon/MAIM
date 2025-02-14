@@ -21,7 +21,8 @@ export const authOptions = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production'
+        secure: process.env.NODE_ENV === 'production',
+        domain: process.env.NODE_ENV === 'production' ? '.your-domain.com' : 'localhost'
       }
     },
     callbackUrl: {
@@ -132,17 +133,18 @@ export const authOptions = {
     },
     async session({ session, token }) {
       if (session?.user) {
-        const signingSecret = process.env.SUPABASE_JWT_SECRET;
-        
-        if (signingSecret) {
-          const payload = {
-            aud: "authenticated",
-            exp: Math.floor(new Date(session.expires).getTime() / 1000),
-            sub: token.sub,
-            email: token.email,
-            role: "authenticated",
-          };
-          session.supabaseAccessToken = jwt.sign(payload, signingSecret);
+        if (!session.supabaseAccessToken) {  // 토큰이 없을 때만 생성
+          const signingSecret = process.env.SUPABASE_JWT_SECRET;
+          if (signingSecret) {
+            const payload = {
+              aud: "authenticated",
+              exp: Math.floor(new Date(session.expires).getTime() / 1000),
+              sub: token.sub,
+              email: token.email,
+              role: "authenticated",
+            };
+            session.supabaseAccessToken = jwt.sign(payload, signingSecret);
+          }
         }
         session.user.id = token.sub;
       }
@@ -154,6 +156,8 @@ export const authOptions = {
   },
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30일
+    updateAge: 24 * 60 * 60,    // 24시간
   },
 };
 
