@@ -18,46 +18,69 @@ export const authOptions = {
     async signIn({ user, account, profile }) {
       if (account.provider === 'google') {
         try {
-          // 1. Supabase Auth에 직접 사용자 생성
-          const { data: { user: supabaseUser }, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
-            email: user.email,
-            email_verified: true,
-            user_metadata: {
-              name: user.name,
-              avatar_url: user.image,
-              provider: 'google',
-            },
-          });
+          // 1. Supabase Auth에서 이메일로 사용자 확인
+          const { data: users, error: listError } = await supabaseAdmin.auth
+            .admin
+            .listUsers({
+              filter: `email.eq.${user.email}`
+            });
 
-          if (signUpError) {
-            // 이미 존재하는 사용자인 경우 무시
-            if (signUpError.message !== 'User already registered') {
-              console.error('Supabase signup error:', signUpError);
-              return false;
-            }
+          if (listError) {
+            console.error('Error checking existing user:', listError);
+            return false;
           }
 
-          // 2. users 테이블에 데이터 저장
+          let supabaseUser = users.users?.length > 0 ? users.users.filter(u => u.email == user.email)[0] : null;
+          console.log('user: ', supabaseUser)
+
+          // 1-1. 존재하지 않는 경우 새로운 사용자 생성
+          if (!supabaseUser) {
+            const { data: { user: newUser }, error: createError } = await supabaseAdmin.auth.admin.createUser({
+              email: user.email,
+              email_verified: true,
+              user_metadata: {
+                name: user.name,
+                avatar_url: user.image,
+                provider: 'google',
+              },
+            });
+
+            if (createError) {
+              console.error('Error creating user:', createError);
+              return false;
+            }
+
+            supabaseUser = newUser;
+          }
+
+          // 1-2. users 테이블에서 사용자 정보 확인
+          const { data: existingUserData, error: checkError } = await supabaseAdmin
+            .from('users')
+            .select()
+            .eq('email', user.email)
+            .single();
+
+          // 1-3 & 1-4. users 테이블에 정보 없으면 추가, 있으면 업데이트
           const { data: userData, error: userError } = await supabaseAdmin
             .from('users')
             .upsert({
-              id: supabaseUser?.id || user.id, // 새로 생성된 ID 또는 기존 ID 사용
+              id: supabaseUser.id,
               email: user.email,
               name: user.name,
               avatar_url: user.image,
               google_id: user.id,
               updated_at: new Date().toISOString(),
-              created_at: new Date().toISOString(),
+              created_at: !existingUserData ? new Date().toISOString() : existingUserData.created_at,
               provider: 'google',
             }, {
-              onConflict: 'email',  // email로 충돌 처리
+              onConflict: 'email',
               returning: true,
             })
             .select()
             .single();
 
           if (userError) {
-            console.error('User data error:', userError);
+            console.error('Error upserting user data:', userError);
             return false;
           }
 
