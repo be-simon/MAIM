@@ -51,9 +51,6 @@ const Summary = ({
     actionItems
   } = data;
 
-  console.log('emotion:', emotions[0]);
-  console.log('color:', getEmotionColor(emotions[0]));
-
   return (
     <Box 
       maxW="800px" 

@@ -150,7 +150,10 @@ const Chat = ({ initialMessage, onEndChat }) => {
           overflowY="auto" 
           pb="200px"
         >
-          <MessageList messages={messages} />
+          <MessageList 
+            messages={messages} 
+            isLoading={isLoading}
+          />
         </Box>
         <ChatInput
           input={input}
