@@ -18,11 +18,11 @@ import {
 import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import { parseSummaryData } from '@/utils/summaryParser';
 import { getEmotionColor } from '@/utils/emotionUtils';
+import { getConversations } from '@/lib/supabase/conversations';
 
 const ITEMS_PER_PAGE = 10;
 
-const History = () => {
-  const { data: session, status } = useSession();
+const History = ({ session }) => {
   const router = useRouter();
   const toast = useToast();
   const [conversations, setConversations] = useState([]);
@@ -37,13 +37,13 @@ const History = () => {
 
   // 컴포넌트 마운트 시 세션 체크
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    if (session === null) {
       router.push('/auth/signin');
       return;
     }
 
     // 세션이 있으면 오늘 날짜로 초기 날짜 범위 설정
-    if (status === 'authenticated') {
+    if (session) {
       const today = new Date();
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(today.getDate() - 30);
@@ -53,7 +53,14 @@ const History = () => {
         end: today.toISOString().split('T')[0]
       });
     }
-  }, [status, router]);
+  }, [session, router]);
+
+  // 컴포넌트 마운트 시 초기 데이터 로딩 추가
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetchConversations(1);
+    }
+  }, [session]); // 세션 변경시에만 실행
 
   // 대화 목록 불러오기
   const fetchConversations = async (page = 1) => {
@@ -61,36 +68,21 @@ const History = () => {
     
     setIsLoading(true);
     try {
-      const queryParams = new URLSearchParams({
-        userId: session.user.id,
-        start: dateRange.start,
-        end: dateRange.end,
-        page: String(page),
-        limit: String(ITEMS_PER_PAGE),
-        sort: sortOrder
-      }).toString();
-
-      const response = await fetch(`/api/conversations?${queryParams}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch conversations');
-      }
-
-      const data = await response.json();
-      console.log('Fetched data:', data);
+      // API 라우트 대신 직접 getConversations 함수 사용
+      const data = await getConversations(session.user.id, session);
       
       // conversations 데이터의 summary 필드를 파싱
-      const parsedConversations = data.conversations.map(conv => ({
+      const parsedConversations = data.map(conv => ({
         ...conv,
         summary: parseSummaryData(conv.summary)
       }));
 
       setConversations(parsedConversations);
-      setTotalPages(Math.ceil(data.total / ITEMS_PER_PAGE));
+      setTotalPages(Math.ceil(data.length / ITEMS_PER_PAGE));
       setCurrentPage(page);
     } catch (error) {
       toast({
-        title: '대화 목록을 불러오는데 실패했습니다.',
+        title: '대화 기록을 불러오는데 실패했습니다.',
         description: error.message,
         status: 'error',
         duration: 3000,
@@ -138,7 +130,7 @@ const History = () => {
 
   return (
     <Box maxW="4xl" mx="auto" p={6} minH="100vh" bg="gray.900">
-      {status === 'loading' ? (
+      {session === null ? (
         <Text textAlign="center" color="whiteAlpha.900">로딩 중...</Text>
       ) : (
         <VStack spacing={8} align="stretch">
