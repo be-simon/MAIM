@@ -29,8 +29,8 @@ export default function SummaryPage() {
     }
   }, [router.isReady, router.query]);
 
-  const handleReturnHome = () => {
-    router.push('/');
+  const handleNavigate = (path) => {
+    router.push(path);
   };
 
   // 데이터가 없는 경우에도 onReturnHome은 전달
@@ -38,7 +38,11 @@ export default function SummaryPage() {
     <Box minH="100vh" bg="gray.900">
       <Summary 
         data={summaryData} 
-        onReturnHome={handleReturnHome}
+        onNavigate={handleNavigate}
+        ctaConfig={{
+          text: "새로운 대화 시작하기",
+          path: "/"
+        }}
       />
     </Box>
   );

@@ -15,7 +15,14 @@ import {
 import { CheckCircleIcon } from '@chakra-ui/icons';
 import { getEmotionColor } from '@/utils/emotionUtils';
 
-const Summary = ({ data, onReturnHome }) => {
+const Summary = ({ 
+  data, 
+  onNavigate, 
+  ctaConfig = {
+    text: "새로운 대화 시작하기",
+    path: "/"
+  }
+}) => {
   // 원본 데이터 로깅
   console.log('Raw Summary data:', data);
 
@@ -25,13 +32,13 @@ const Summary = ({ data, onReturnHome }) => {
       <Box maxW="800px" mx="auto" p={6} textAlign="center" color="whiteAlpha.900">
         <Text color="whiteAlpha.900">요약 데이터를 불러올 수 없습니다.</Text>
         <Button 
-          onClick={onReturnHome} 
+          onClick={() => onNavigate(ctaConfig.path)} 
           mt={4}
           colorScheme="blue"
           variant="solid"
           _hover={{ bg: "blue.600" }}
         >
-          홈으로 돌아가기
+          {ctaConfig.text}
         </Button>
       </Box>
     );
@@ -148,12 +155,12 @@ const Summary = ({ data, onReturnHome }) => {
         <Button 
           colorScheme="blue" 
           size="lg" 
-          onClick={onReturnHome}
+          onClick={() => onNavigate(ctaConfig.path)}
           mt={6}
           variant="solid"
           _hover={{ bg: "blue.600" }}
         >
-          새로운 대화 시작하기
+          {ctaConfig.text}
         </Button>
       </VStack>
     </Box>

@@ -102,15 +102,19 @@ export default function HistoryDetail() {
     );
   }
 
-  const handleReturnHome = () => {
-    router.push('/history');
+  const handleNavigate = (path) => {
+    router.push(path);
   };
 
   return (
     <Box minH="100vh" bg="gray.900">
       <Summary 
         data={summaryData} 
-        onReturnHome={handleReturnHome}
+        onNavigate={handleNavigate}
+        ctaConfig={{
+          text: "목록으로 돌아가기",
+          path: "/history"
+        }}
       />
     </Box>
   );
