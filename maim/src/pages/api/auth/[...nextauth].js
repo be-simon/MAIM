@@ -47,7 +47,8 @@ export const authOptions = {
       if (account.provider === 'google') {
         try {
           // 1. 먼저 사용자가 존재하는지 확인
-          const { data: existingUser, error: getUserError } = await supabaseAdmin.auth.admin.getUserByEmail(user.email);
+          const { data: existingUser, error: getUserError } = await supabaseAdmin.auth
+            .getUserByEmail(user.email);
 
           // getUserError 처리 추가
           if (getUserError) {
@@ -55,26 +56,29 @@ export const authOptions = {
             return false;
           }
 
-          let supabaseUser = existingUser?.user;
+          let supabaseUser = existingUser;
 
           // 사용자가 존재하지 않는 경우에만 새로 생성
           if (!supabaseUser) {
-            const { data: { user: newUser }, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
-              email: user.email,
-              email_verified: true,
-              user_metadata: {
-                name: user.name,
-                avatar_url: user.image,
-                provider: 'google',
-              },
-            });
+            const { data: newUser, error: signUpError } = await supabaseAdmin.auth
+              .admin
+              .createUser({
+                email: user.email,
+                email_verified: true,
+                user_metadata: {
+                  name: user.name,
+                  avatar_url: user.image,
+                  provider: 'google',
+                },
+              });
 
             if (signUpError) {
               // email_exists 에러인 경우 다시 한번 사용자 조회 시도
               if (signUpError.code === 'email_exists') {
-                const { data: retryUser, error: retryError } = await supabaseAdmin.auth.admin.getUserByEmail(user.email);
-                if (!retryError && retryUser?.user) {
-                  supabaseUser = retryUser.user;
+                const { data: retryUser, error: retryError } = await supabaseAdmin.auth
+                  .getUserByEmail(user.email);
+                if (!retryError && retryUser) {
+                  supabaseUser = retryUser;
                 } else {
                   console.error('Supabase signup error:', signUpError);
                   return false;
