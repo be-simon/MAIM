@@ -3,9 +3,6 @@ import GoogleProvider from 'next-auth/providers/google';
 import jwt from 'jsonwebtoken';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 
-// UUID 네임스페이스 생성 (고정된 값 사용)
-const UUID_NAMESPACE = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
-
 export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
@@ -150,15 +147,21 @@ export const authOptions = {
       }
       return session;
     },
+    async redirect({ url, baseUrl }) {
+      // URL이 baseUrl로 시작하면 해당 URL로, 아니면 baseUrl로
+      return url.startsWith(baseUrl) ? url : baseUrl;
+    },
   },
   pages: {
     signIn: '/auth/signin',
+    signOut: '/',
   },
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30일
     updateAge: 24 * 60 * 60,    // 24시간
   },
+  debug: process.env.NODE_ENV === 'development', // 개발 환경에서 디버깅 활성화
 };
 
 export default NextAuth(authOptions); 

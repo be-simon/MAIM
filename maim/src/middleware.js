@@ -1,22 +1,32 @@
 import { withAuth } from "next-auth/middleware";
+import { NextResponse } from "next/server";
 
 export default withAuth({
   callbacks: {
     authorized: ({ req, token }) => {
-      // 로그인 페이지는 항상 접근 가능
-      if (req.nextUrl.pathname.startsWith('/auth')) {
+      const { pathname } = req.nextUrl;
+
+      // 디버깅을 위한 로그
+      console.log('Current path:', pathname);
+      console.log('Token exists:', !!token);
+
+      // auth 페이지 처리
+      if (pathname.startsWith('/auth')) {
+        if (token) {
+          // 로그인된 상태에서 auth 페이지 접근 시 홈으로
+          return NextResponse.redirect(new URL('/', req.url));
+        }
         return true;
       }
-      
-      // 모든 보호된 경로는 토큰 필요 (홈페이지 포함)
-      if (req.nextUrl.pathname === '/' || 
-          req.nextUrl.pathname.startsWith('/chat') || 
-          req.nextUrl.pathname.startsWith('/summary') ||
-          req.nextUrl.pathname.startsWith('/history')) {
+
+      // 보호된 경로 처리
+      if (pathname === '/' || 
+          pathname.startsWith('/chat') || 
+          pathname.startsWith('/summary') ||
+          pathname.startsWith('/history')) {
         return !!token;
       }
-      
-      // 기본적으로 접근 허용
+
       return true;
     },
   },
