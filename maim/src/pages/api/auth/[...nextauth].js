@@ -148,10 +148,10 @@ export const authOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      console.log('redirect url: ', url)
-      console.log('redirect baseUrl: ', baseUrl)
       try {
-        const urlObj = new URL(url);
+        // 상대 경로인 경우 baseUrl과 결합
+        const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
+        const urlObj = new URL(fullUrl);
         
         // auth 경로인지 체크
         if (urlObj.pathname.startsWith('/auth')) {
@@ -160,8 +160,11 @@ export const authOptions = {
         
         // callbackUrl 파라미터가 auth를 포함하는지 체크
         const callbackUrl = urlObj.searchParams.get('callbackUrl');
-        if (callbackUrl && new URL(callbackUrl).pathname.startsWith('/auth')) {
-          return baseUrl;
+        if (callbackUrl) {
+          const callbackUrlObj = new URL(callbackUrl);
+          if (callbackUrlObj.pathname.startsWith('/auth')) {
+            return baseUrl;
+          }
         }
         
         return url.startsWith(baseUrl) ? url : baseUrl;
