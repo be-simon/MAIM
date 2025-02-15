@@ -148,7 +148,11 @@ export const authOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // URL이 baseUrl로 시작하면 해당 URL로, 아니면 baseUrl로
+      // auth 페이지에서 온 경우 홈으로 리다이렉트
+      if (url.startsWith(`${baseUrl}/auth`)) {
+        return baseUrl;
+      }
+      // 그 외의 경우 기존 로직 유지
       return url.startsWith(baseUrl) ? url : baseUrl;
     },
   },
