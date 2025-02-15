@@ -148,12 +148,27 @@ export const authOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // auth 페이지에서 온 경우 홈으로 리다이렉트
-      if (url.startsWith(`${baseUrl}/auth`)) {
+      console.log('redirect url: ', url)
+      console.log('redirect baseUrl: ', baseUrl)
+      try {
+        const urlObj = new URL(url);
+        
+        // auth 경로인지 체크
+        if (urlObj.pathname.startsWith('/auth')) {
+          return baseUrl;
+        }
+        
+        // callbackUrl 파라미터가 auth를 포함하는지 체크
+        const callbackUrl = urlObj.searchParams.get('callbackUrl');
+        if (callbackUrl && new URL(callbackUrl).pathname.startsWith('/auth')) {
+          return baseUrl;
+        }
+        
+        return url.startsWith(baseUrl) ? url : baseUrl;
+      } catch (error) {
+        console.error('Redirect error:', error);
         return baseUrl;
       }
-      // 그 외의 경우 기존 로직 유지
-      return url.startsWith(baseUrl) ? url : baseUrl;
     },
   },
   pages: {
