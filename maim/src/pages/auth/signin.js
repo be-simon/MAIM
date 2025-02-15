@@ -6,7 +6,6 @@ import {
   VStack,
   Text,
   Container,
-  useColorModeValue,
 } from '@chakra-ui/react';
 import { FcGoogle } from 'react-icons/fc';
 
@@ -16,7 +15,7 @@ export default function SignIn() {
 
   if (session) {
     router.push('/');
-    return null;
+    // return null;
   }
 
   const handleGoogleSignIn = () => {

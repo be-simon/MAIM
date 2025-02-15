@@ -1,27 +1,43 @@
 import { withAuth } from "next-auth/middleware";
+import { NextResponse } from "next/server";
 
 export default withAuth({
   callbacks: {
     authorized: ({ req, token }) => {
-      // 로그인 페이지는 항상 접근 가능
-      if (req.nextUrl.pathname.startsWith('/auth')) {
+      const { pathname } = req.nextUrl;
+
+      // 디버깅을 위한 로그
+      console.log('Current path:', pathname);
+      console.log('Token exists:', !!token);
+
+      // auth 페이지 처리
+      if (pathname.startsWith('/auth')) {
+        if (token) {
+          // 로그인된 상태에서 auth 페이지 접근 시 홈으로
+          return NextResponse.redirect(new URL('/', req.url));
+        }
         return true;
       }
-      // 다른 페이지는 토큰이 있어야 접근 가능
-      return !!token;
+
+      // 보호된 경로 처리
+      if (pathname === '/' || 
+          pathname.startsWith('/chat') || 
+          pathname.startsWith('/summary') ||
+          pathname.startsWith('/history')) {
+        return !!token;
+      }
+
+      return true;
     },
   },
 });
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api/auth (auth API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api/auth|_next/static|_next/image|favicon.ico).*)',
+    '/',
+    '/chat/:path*',
+    '/summary/:path*',
+    '/history/:path*',
+    '/auth/:path*'
   ],
 }; 
