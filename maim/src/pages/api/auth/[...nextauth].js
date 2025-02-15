@@ -7,60 +7,44 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 const UUID_NAMESPACE = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
 
 export const authOptions = {
-  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      profile(profile) {
+        return {
+          id: profile.sub,
+          email: profile.email,
+          name: profile.name,
+          image: profile.picture,
+        }
+      }
     }),
   ],
-  cookies: {
-    sessionToken: {
-      name: `next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production'
-      }
-    },
-    callbackUrl: {
-      name: `next-auth.callback-url`,
-      options: {
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production'
-      }
-    },
-    csrfToken: {
-      name: 'next-auth.csrf-token',
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production'
-      }
-    }
+  secret: process.env.NEXTAUTH_SECRET,
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
     async signIn({ user, account, profile }) {
       if (account.provider === 'google') {
         try {
-          // 1. Supabase Auth에서 이메일로 사용자 확인
-          const { data: users, error: listError } = await supabaseAdmin.auth
-            .admin
-            .listUsers();
+          // 1. users 테이블에서 이메일로 사용자 확인
+          const { data: existingUser, error: checkError } = await supabaseAdmin
+            .from('users')
+            .select()
+            .eq('email', user.email)
+            .single();
 
-          if (listError) {
-            console.error('Error checking existing user:', listError);
+          if (checkError && checkError.code !== 'PGRST116') {
+            console.error('Error checking existing user:', checkError);
             return false;
           }
 
-          let supabaseUser = users.users?.length > 0 ? users.users.filter(u => u.email == user.email)[0] : null;
-          console.log('user: ', supabaseUser)
-
-          // 1-1. 존재하지 않는 경우 새로운 사용자 생성
-          if (!supabaseUser) {
+          // 새 사용자인 경우
+          if (!existingUser) {
+            // Supabase Auth에 사용자 생성
             const { data: { user: newUser }, error: createError } = await supabaseAdmin.auth.admin.createUser({
               email: user.email,
               email_verified: true,
@@ -76,44 +60,51 @@ export const authOptions = {
               return false;
             }
 
-            supabaseUser = newUser;
+            // users 테이블에 사용자 정보 저장
+            const { data: userData, error: userError } = await supabaseAdmin
+              .from('users')
+              .insert({
+                id: newUser.id,
+                email: user.email,
+                name: user.name,
+                avatar_url: user.image,
+                google_id: user.id,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                provider: 'google',
+              })
+              .select()
+              .single();
+
+            if (userError) {
+              console.error('Error inserting user data:', userError);
+              return false;
+            }
+
+            user.id = userData.id;
+          } else {
+            // 기존 사용자 정보 업데이트
+            const { data: userData, error: userError } = await supabaseAdmin
+              .from('users')
+              .update({
+                name: user.name,
+                avatar_url: user.image,
+                google_id: user.id,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('email', user.email)
+              .select()
+              .single();
+
+            if (userError) {
+              console.error('Error updating user data:', userError);
+              return false;
+            }
+
+            user.id = userData.id;
           }
 
-          // 1-2. users 테이블에서 사용자 정보 확인
-          const { data: existingUserData, error: checkError } = await supabaseAdmin
-            .from('users')
-            .select()
-            .eq('email', user.email)
-            .single();
-
-          // 1-3 & 1-4. users 테이블에 정보 없으면 추가, 있으면 업데이트
-          const { data: userData, error: userError } = await supabaseAdmin
-            .from('users')
-            .upsert({
-              id: supabaseUser.id,
-              email: user.email,
-              name: user.name,
-              avatar_url: user.image,
-              google_id: user.id,
-              updated_at: new Date().toISOString(),
-              created_at: !existingUserData ? new Date().toISOString() : existingUserData.created_at,
-              provider: 'google',
-            }, {
-              onConflict: 'email',
-              returning: true,
-            })
-            .select()
-            .single();
-
-          if (userError) {
-            console.error('Error upserting user data:', userError);
-            return false;
-          }
-
-          // NextAuth 사용자 ID 설정
-          user.id = userData.id;
           return true;
-
         } catch (error) {
           console.error('Auth error:', error);
           return false;
@@ -122,39 +113,42 @@ export const authOptions = {
       return true;
     },
     async jwt({ token, user, account }) {
-      if (user) {
-        token.sub = user.id;
-        token.email = user.email;
-        token.name = user.name;
-        token.picture = user.image;
+      // 최초 로그인 시에만 user와 account가 제공됨
+      if (account && user) {
+        return {
+          ...token,
+          userId: user.id,
+          provider: account.provider,
+        }
       }
-      return token;
+      return token
     },
     async session({ session, token }) {
-      if (session?.user) {
+      if (session.user) {
+        // JWT 토큰에서 Supabase 액세스 토큰 생성
         const signingSecret = process.env.SUPABASE_JWT_SECRET;
-        
         if (signingSecret) {
           const payload = {
             aud: "authenticated",
             exp: Math.floor(new Date(session.expires).getTime() / 1000),
-            sub: token.sub,
+            sub: token.userId,
             email: token.email,
             role: "authenticated",
           };
           session.supabaseAccessToken = jwt.sign(payload, signingSecret);
         }
-        session.user.id = token.sub;
+        
+        // 세션에 사용자 ID 추가
+        session.user.id = token.userId;
       }
       return session;
     },
   },
   pages: {
     signIn: '/auth/signin',
+    error: '/auth/error',
   },
-  session: {
-    strategy: "jwt",
-  },
+  debug: process.env.NODE_ENV === 'development',
 };
 
 export default NextAuth(authOptions); 
