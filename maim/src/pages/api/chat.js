@@ -36,12 +36,19 @@ export default async function handler(req, res) {
 
     // 처리된 메시지 객체 전달
     const response = await chain.processMessage(validatedMessage);
+    
+    // 응답 유효성 검사 및 포맷팅
+    const formattedResponse = {
+      message: typeof response === 'string' ? response : response.content,
+      sessionId: currentSessionId,
+      timestamp: new Date().toISOString()
+    };
 
-    // sessionId를 응답에 포함
-    res.status(200).json({
-      ...response,
-      sessionId: currentSessionId
-    });
+    if (response.action_items) {
+      formattedResponse.action_items = response.action_items;
+    }
+
+    res.status(200).json(formattedResponse);
   } catch (error) {
     console.error('Error in chat API:', error);
     res.status(500).json({ error: error.message });
