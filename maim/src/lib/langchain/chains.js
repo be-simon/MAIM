@@ -2,7 +2,7 @@ import { ConversationChain } from "langchain/chains";
 import { ChatOpenAI } from "@langchain/openai";
 import { BufferMemory } from "langchain/memory";
 import { GPT_MODELS, DEFAULT_MODEL } from "@/lib/constants/models";
-import { CHAT_TEMPLATES, RESPONSE_FORMATS } from './templates';
+import { getChatTemplates, RESPONSE_FORMATS } from './templates';
 
 // GPT 모델 생성 함수
 function createModel(modelType = DEFAULT_MODEL) {
@@ -26,6 +26,7 @@ export class ConversationChainHandler {
     this.model = model;
     this.isFirstMessage = true;
     this.chain = null;
+    this.templates = null;
     
     // 메시지 히스토리 기반으로 초기화
     this.initializeState();
@@ -35,6 +36,7 @@ export class ConversationChainHandler {
     const messages = await this.memoryStore.getMessages();
     console.log('Current messages in store:', messages);
     this.isFirstMessage = messages.length === 0;
+    this.templates = await getChatTemplates();  // 템플릿 초기화
     console.log('isFirstMessage initialized as:', this.isFirstMessage);
   }
 
@@ -96,10 +98,15 @@ export class ConversationChainHandler {
 
   async processMessage(message) {
     try {
+      if (!this.templates) {
+        await this.initializeState();
+      }
+
       console.log('Processing message with state:', {
         isFirstMessage: this.isFirstMessage,
         messageCount: await this.memoryStore.getMessages().length
       });
+      
       if (!message?.content) {
         throw new Error('Invalid message format: content must be a string');
       }
@@ -116,8 +123,8 @@ export class ConversationChainHandler {
       
       // 현재 상태에 맞는 프롬프트 템플릿 선택
       const promptTemplate = this.isFirstMessage ? 
-        CHAT_TEMPLATES.INITIAL_CONVERSATION :
-        CHAT_TEMPLATES.ONGOING_CONVERSATION;
+        this.templates.INITIAL_CONVERSATION :
+        this.templates.ONGOING_CONVERSATION;
 
       console.log('isFirstMessage:', this.isFirstMessage);
       // 프롬프트 메시지 포맷팅
@@ -162,6 +169,10 @@ export class ConversationChainHandler {
 
   async generateSummary(sessionId) {
     try {
+      if (!this.templates) {
+        await this.initializeState();
+      }
+
       const messages = await this.memoryStore.getMessages();
       
       // 대화 내용을 텍스트로 변환
@@ -170,7 +181,7 @@ export class ConversationChainHandler {
         .join('\n');
 
       // 요약 프롬프트 포맷팅
-      const summaryPrompt = await CHAT_TEMPLATES.SUMMARY_ANALYSIS.format({
+      const summaryPrompt = await this.templates.SUMMARY_ANALYSIS.format({
         text: conversationText
       });
 
