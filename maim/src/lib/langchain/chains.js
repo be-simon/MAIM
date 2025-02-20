@@ -28,7 +28,6 @@ export class ConversationChainHandler {
     this.chain = null;
     this.templates = null;
     
-    // 메시지 히스토리 기반으로 초기화
     this.initializeState();
   }
 
@@ -36,7 +35,7 @@ export class ConversationChainHandler {
     const messages = await this.memoryStore.getMessages();
     console.log('Current messages in store:', messages);
     this.isFirstMessage = messages.length === 0;
-    this.templates = await getChatTemplates();  // 템플릿 초기화
+    this.templates = await getChatTemplates();  // DB에서 템플릿 초기화
     console.log('isFirstMessage initialized as:', this.isFirstMessage);
   }
 
