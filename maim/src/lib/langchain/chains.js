@@ -105,6 +105,7 @@ export class ConversationChainHandler {
         isFirstMessage: this.isFirstMessage,
         messageCount: await this.memoryStore.getMessages().length
       });
+      
       if (!message?.content) {
         throw new Error('Invalid message format: content must be a string');
       }
