@@ -8,7 +8,7 @@ import { getChatTemplates, RESPONSE_FORMATS } from './templates';
 function createModel(modelType = DEFAULT_MODEL) {
   return new ChatOpenAI({
     modelName: GPT_MODELS[modelType].id,
-    temperature: 0.7,
+    temperature: 1.0,
     openAIApiKey: process.env.OPENAI_API_KEY,
   });
 }
@@ -19,6 +19,12 @@ export function updateModel(modelType) {
   model = createModel(modelType);
   return model;
 }
+
+// 응답 형식 정의
+const BASE_RESPONSE_FORMAT = {
+  response: '',
+  actionItems: []
+};
 
 export class ConversationChainHandler {
   constructor(memoryStore) {
@@ -60,39 +66,59 @@ export class ConversationChainHandler {
   validateResponse(response, type) {
     try {
       console.log('Raw response before validation:', response);
-      const format = RESPONSE_FORMATS[type];
+      
       const cleanedResponse = this.cleanResponse(response);
       console.log('Cleaned response:', cleanedResponse);
-      const parsed = typeof cleanedResponse === 'string' ? JSON.parse(cleanedResponse) : cleanedResponse;
+      
+      let parsed = typeof cleanedResponse === 'string' ? 
+        JSON.parse(cleanedResponse) : cleanedResponse;
       console.log('Parsed response:', parsed);
 
-      // 필수 필드 검사
-      for (const key of Object.keys(format)) {
-        if (!(key in parsed)) {
-          throw new Error(`Missing required field: ${key}`);
-        }
+      // 응답이 문자열인 경우 기본 형식으로 변환
+      if (typeof parsed === 'string') {
+        parsed = {
+          response: parsed,
+          action_items: []
+        };
       }
 
       return parsed;
     } catch (error) {
       console.error('Response validation error:', error);
-      throw error;
+      // 에러 발생시 기본 응답 반환
+      return {
+        response: "응답 처리 중 오류가 발생했습니다.",
+        action_items: []
+      };
     }
   }
 
   cleanResponse(response) {
-    // Remove any markdown code block indicators
-    response = response.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-    
-    // Remove any leading/trailing whitespace
-    response = response.trim();
-    
-    // Ensure the response starts with { and ends with }
-    if (!response.startsWith('{') || !response.endsWith('}')) {
-      throw new Error('Invalid JSON format');
+    try {
+      // 응답이 이미 객체인 경우
+      if (typeof response === 'object') {
+        return response;
+      }
+
+      // 문자열 응답 정리
+      let cleaned = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      
+      // JSON 형식이 아닌 경우 기본 형식으로 변환
+      if (!cleaned.startsWith('{') || !cleaned.endsWith('}')) {
+        return {
+          response: cleaned,
+          action_items: []
+        };
+      }
+      
+      return cleaned;
+    } catch (error) {
+      console.error('Error cleaning response:', error);
+      return {
+        response: "응답 정리 중 오류가 발생했습니다.",
+        action_items: []
+      };
     }
-    
-    return response;
   }
 
   async processMessage(message) {
@@ -137,11 +163,8 @@ export class ConversationChainHandler {
       // LLM 호출
       const result = await this.model.invoke(messages);
 
-      // JSON 응답 파싱 및 검증
-      const validatedResponse = this.validateResponse(
-        result.content,
-        this.isFirstMessage ? 'INITIAL' : 'ONGOING'
-      );
+      // JSON 응답 파싱 및 검증 (type 파라미터 제거)
+      const validatedResponse = this.validateResponse(result.content);
 
       // AI 응답 저장
       const aiMessage = {
@@ -181,7 +204,7 @@ export class ConversationChainHandler {
 
       // 요약 프롬프트 포맷팅
       const summaryPrompt = await this.templates.SUMMARY_ANALYSIS.format({
-        text: conversationText
+        input: conversationText
       });
 
       // LLM 호출

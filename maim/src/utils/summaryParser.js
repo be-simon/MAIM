@@ -1,7 +1,8 @@
 export const parseSummaryData = (rawData) => {
   try {
     const data = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
-    
+    console.log('Parsed data:', data);
+
     return {
       summary: data?.summary || "요약 내용이 없습니다.",
       emotions: normalizeEmotions(data?.emotions),

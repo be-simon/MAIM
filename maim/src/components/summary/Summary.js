@@ -18,6 +18,7 @@ import { getEmotionColor } from '@/utils/emotionUtils';
 const Summary = ({ 
   data, 
   onNavigate, 
+  onNavigateToHome,
   ctaConfig = {
     text: "새로운 대화 시작하기",
     path: "/"
@@ -47,7 +48,6 @@ const Summary = ({
   const {
     summary,
     emotions,
-    insights,
     actionItems
   } = data;
 
@@ -75,24 +75,24 @@ const Summary = ({
         <Box>
           <Heading size="md" mb={3}>감정 분석</Heading>
           <Wrap spacing={3}>
-            {emotions.map((emotion, index) => (
-              <WrapItem key={index}>
+              {emotions.map((emotion, index) => (
+                <WrapItem key={index}>
                 <Tag 
-                  size="lg" 
-                  colorScheme={getEmotionColor(emotion)}
-                  variant="solid"
+                size="lg" 
+                colorScheme={getEmotionColor(emotion)}
+                variant="solid"
                 >
-                  {emotion.label}
+                {emotion}
                 </Tag>
-              </WrapItem>
-            ))}
+                </WrapItem>
+              ))}
           </Wrap>
         </Box>
 
         <Divider borderColor="gray.600" />
 
         {/* 인사이트 섹션 */}
-        <Box>
+        {/* <Box>
           <Heading size="md" mb={4}>인사이트</Heading>
           <List spacing={3}>
             {insights.map((insight, index) => (
@@ -118,7 +118,7 @@ const Summary = ({
               </ListItem>
             ))}
           </List>
-        </Box>
+        </Box> */}
 
         {/* 액션 플랜 섹션 */}
         <Box>
@@ -158,6 +158,16 @@ const Summary = ({
           _hover={{ bg: "blue.600" }}
         >
           {ctaConfig.text}
+        </Button>
+        <Button 
+          colorScheme="" 
+          size="lg" 
+          onClick={() => onNavigateToHome()}
+          mt={0}
+          variant="solid"
+          _hover={{ bg: "gray.700" }}
+        >
+          홈으로 가기
         </Button>
       </VStack>
     </Box>

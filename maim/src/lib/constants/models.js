@@ -19,11 +19,18 @@ export const GPT_MODELS = {
     description: '빠른 응답, 경제적',
     maxTokens: 16385,
     costPer1k: 0.001,
+  },
+  GPT4O_MINI: {
+    id: 'gpt-4o-mini',
+    name: 'GPT-4o Mini',
+    description: '최신 지식, 최신 모델',
+    maxTokens: 16385,
+    costPer1k: 0.001,
   }
 };
 
 // 기본 모델 설정
-export const DEFAULT_MODEL = 'GPT35_TURBO';
+export const DEFAULT_MODEL = 'GPT4O_MINI';
 
 // 모델 유효성 검사
 export function isValidModel(model) {

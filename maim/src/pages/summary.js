@@ -9,28 +9,23 @@ export default function SummaryPage() {
   const [summaryData, setSummaryData] = useState(null);
 
   useEffect(() => {
-    if (!router.isReady) return;  // 라우터가 준비될 때까지 대기
-
-    console.log('Router is ready');
-    console.log('Router query:', router.query);
-
-    if (router.query.data) {
-      try {
-        console.log('Router query data:', router.query.data);
-        const decodedData = decodeURIComponent(router.query.data);
-        const normalizedData = parseSummaryData(decodedData);
-
-        console.log('Normalized data:', normalizedData);
-        setSummaryData(normalizedData);
-      } catch (error) {
-        console.error('Error processing summary data:', error);
-        router.push('/');
-      }
+    if (!router.isReady) return;
+    
+    // 로컬 스토리지에서 요약 데이터 불러오기
+    const savedData = localStorage.getItem('summaryData');
+    if (savedData) {
+      const parsedData = parseSummaryData(savedData);
+      setSummaryData(parsedData);
+      // 로컬 스토리지는 삭제하지 않고 유지
     }
-  }, [router.isReady, router.query]);
+  }, [router.isReady]);
 
   const handleNavigate = (path) => {
     router.push(path);
+  };
+
+  const handleNavigateToHome = () => {
+    router.push('/');
   };
 
   // 데이터가 없는 경우에도 onReturnHome은 전달
@@ -39,6 +34,7 @@ export default function SummaryPage() {
       <Summary 
         data={summaryData} 
         onNavigate={handleNavigate}
+        onNavigateToHome={handleNavigateToHome}
         ctaConfig={{
           text: "새로운 대화 시작하기",
           path: "/"

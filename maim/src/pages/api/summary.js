@@ -37,7 +37,7 @@ export default async function handler(req, res) {
 
     // 요약 생성
     const summary = await chainHandler.generateSummary(sessionId);
-    console.log('Generated summary:', summary);
+    console.log('Generated summary: ', summary);
 
     // 메모리 정리
     await memoryStore.clearMemory();
@@ -51,12 +51,19 @@ export default async function handler(req, res) {
       insights: Array.isArray(summary.insights) 
         ? summary.insights 
         : ["통찰을 생성할 수 없습니다."],
-      actionItems: actionItems.length > 0 
-        ? actionItems 
-        : (Array.isArray(summary.actionItems) ? summary.actionItems : ["실천 제안을 생성할 수 없습니다."])
+      actionItems: Array.isArray(summary.actionItems)
+        ? summary.actionItems.map(item => item || "알 수 없음")
+        : ["실천 제안을 생성할 수 없습니다."],
+      timestamp: new Date().toISOString(),
+      id: sessionId
     };
 
-    return res.status(200).json(processedSummary);
+    console.log('Processed summary: ', processedSummary);
+
+    return res.status(200).json({
+      data: processedSummary,
+      redirectUrl: '/summary'
+    });
 
   } catch (error) {
     console.error('API Error:', error);

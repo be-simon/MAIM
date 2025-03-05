@@ -47,7 +47,7 @@ const Navbar = () => {
         >
           MAIM
         </Button>
-        <ModelSelector />
+        {/* <ModelSelector /> */}
       </HStack>
       <Spacer />
       <HStack spacing={4}>
@@ -59,17 +59,17 @@ const Navbar = () => {
         >
           대화 기록
         </Button>
-        <Button
+        {/* <Button
           variant="ghost"
           onClick={() => router.push('/action-items')}
           color="whiteAlpha.900"
           _hover={{ bg: "whiteAlpha.200" }}
         >
           액션 아이템
-        </Button>
+        </Button> */}
         
         {/* 프로필 메뉴 */}
-        {session ? (
+        {/* {session ? (
           <Menu>
             <MenuButton>
               <Avatar
@@ -118,7 +118,7 @@ const Navbar = () => {
           >
             로그인
           </Button>
-        )}
+        )} */}
       </HStack>
     </Flex>
   );

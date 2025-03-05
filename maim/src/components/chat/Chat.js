@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { VStack, Box, useToast, Modal, ModalOverlay, ModalContent, ModalBody, Flex, Text, Spinner } from '@chakra-ui/react';
-import { useSession } from 'next-auth/react';
 import MessageList from './MessageList';
 import ChatInput from './ChatInput';
-import { supabase } from '@/lib/supabase/client';
+import { getSessionId } from '@/utils/session';
 
 const Chat = ({ initialMessage, onEndChat }) => {
   const [messages, setMessages] = useState([]);
@@ -11,21 +10,10 @@ const Chat = ({ initialMessage, onEndChat }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [input, setInput] = useState('');
   const [sessionId, setSessionId] = useState(null);
-  const { data: session } = useSession();
   const toast = useToast();
   const initialMessageRef = useRef(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
-
-  // 세션 상태 모니터링
-  useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Supabase auth event:', event, session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const [error, setError] = useState(null);
 
   // 초기 메시지 처리
   useEffect(() => {
@@ -49,6 +37,8 @@ const Chat = ({ initialMessage, onEndChat }) => {
     
     setIsLoading(true);
     try {
+      const sessionId = getSessionId();
+
       // 일반 메시지일 때만 사용자 메시지 추가
       if (!isInitial) {
         setMessages(prev => [...prev, 
@@ -61,9 +51,9 @@ const Chat = ({ initialMessage, onEndChat }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           message: content,
-          sessionId
+          browserSessionId: sessionId
         }),
       });
 
@@ -95,32 +85,15 @@ const Chat = ({ initialMessage, onEndChat }) => {
         setInput('');
       }
     } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: '오류가 발생했습니다.',
-        description: '메시지 전송 중 문제가 발생했습니다.',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      });
+      console.error('Error sending message:', error);
+      setError('메시지 전송 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleEndChat = async () => {
-    if (!session) {
-      toast({
-        title: '로그인이 필요합니다.',
-        description: '대화를 저장하려면 먼저 로그인해주세요.',
-        status: 'warning',
-        duration: 3000,
-        isClosable: true,
-      });
-      return;
-    }
-
-    setIsSummarizing(true); // 요약 시작
+    setIsSummarizing(true);
     try {
       await onEndChat(messages, sessionId, actionItems);
     } catch (error) {
@@ -133,7 +106,7 @@ const Chat = ({ initialMessage, onEndChat }) => {
         isClosable: true,
       });
     } finally {
-      setIsSummarizing(false); // 요약 완료
+      setIsSummarizing(false);
     }
   };
 
